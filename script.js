@@ -64,36 +64,86 @@ async function updateFileList(files) {
             const fileTypeClass = file.type.startsWith('image/') ? 'text-green-600' : 
                                file.type === 'application/pdf' ? 'text-red-600' : 'text-blue-600';
             
-            // Create image preview for image files
-            let previewContent = '';
+            // Create main container
+            const mainContainer = document.createElement('div');
+            mainContainer.className = 'flex items-start flex-1 min-w-0';
+            
+            // Create preview container
+            const previewContainer = document.createElement('div');
+            previewContainer.className = 'flex-shrink-0 w-12 h-12 bg-white dark:bg-gray-600 rounded-lg flex items-center justify-center mr-4 shadow-sm overflow-hidden';
+            
+            // Create preview content
             if (file.type.startsWith('image/')) {
                 const imageUrl = URL.createObjectURL(file);
-                previewContent = `<img src="${imageUrl}" alt="${file.name}" class="w-12 h-12 object-cover rounded-lg">`;
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                img.alt = file.name;
+                img.className = 'w-12 h-12 object-cover rounded-lg';
+                previewContainer.appendChild(img);
             } else {
-                previewContent = `<i class="fas ${fileIcon} text-lg ${fileTypeClass}"></i>`;
+                const icon = document.createElement('i');
+                icon.className = `fas ${fileIcon} text-lg ${fileTypeClass}`;
+                previewContainer.appendChild(icon);
             }
             
-            fileItem.innerHTML = `
-                <div class="flex items-start flex-1 min-w-0">
-                    <div class="flex-shrink-0 w-12 h-12 bg-white dark:bg-gray-600 rounded-lg flex items-center justify-center mr-4 shadow-sm overflow-hidden">
-                        ${previewContent}
-                    </div>
-                    <div class="flex-1 min-w-0 overflow-hidden">
-                        <div class="font-medium text-gray-900 dark:text-white break-words leading-tight">${file.name}</div>
-                        <div class="text-sm text-gray-500 dark:text-gray-400 flex flex-wrap items-center mt-1 gap-1">
-                            <span>${formatFileSize(file.size)}</span>
-                            <span class="hidden sm:inline">•</span>
-                            <span class="capitalize">${file.type.split('/')[1] || 'Unknown'}</span>
-                            ${file.lastModified ? `<span class="hidden sm:inline">•</span><span>${new Date(file.lastModified).toLocaleDateString()}</span>` : ''}
-                        </div>
-                    </div>
-                </div>
-                <button onclick="removeFile(${index})" class="btn-enhanced flex-shrink-0 ml-4 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200">
-                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-                    </svg>
-                </button>
-            `;
+            // Create file info container
+            const fileInfoContainer = document.createElement('div');
+            fileInfoContainer.className = 'flex-1 min-w-0 overflow-hidden';
+            
+            // Create file name
+            const fileName = document.createElement('div');
+            fileName.className = 'font-medium text-gray-900 dark:text-white break-words leading-tight';
+            fileName.textContent = file.name;
+            
+            // Create file details
+            const fileDetails = document.createElement('div');
+            fileDetails.className = 'text-sm text-gray-500 dark:text-gray-400 flex flex-wrap items-center mt-1 gap-1';
+            
+            const fileSize = document.createElement('span');
+            fileSize.textContent = formatFileSize(file.size);
+            fileDetails.appendChild(fileSize);
+            
+            const separator1 = document.createElement('span');
+            separator1.className = 'hidden sm:inline';
+            separator1.textContent = '•';
+            fileDetails.appendChild(separator1);
+            
+            const fileType = document.createElement('span');
+            fileType.className = 'capitalize';
+            fileType.textContent = file.type.split('/')[1] || 'Unknown';
+            fileDetails.appendChild(fileType);
+            
+            if (file.lastModified) {
+                const separator2 = document.createElement('span');
+                separator2.className = 'hidden sm:inline';
+                separator2.textContent = '•';
+                fileDetails.appendChild(separator2);
+                
+                const lastModified = document.createElement('span');
+                lastModified.textContent = new Date(file.lastModified).toLocaleDateString();
+                fileDetails.appendChild(lastModified);
+            }
+            
+            // Create remove button
+            const removeButton = document.createElement('button');
+            removeButton.className = 'btn-enhanced flex-shrink-0 ml-4 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200';
+            removeButton.onclick = () => removeFile(index);
+            
+            const removeIcon = document.createElement('svg');
+            removeIcon.className = 'w-4 h-4';
+            removeIcon.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            removeIcon.setAttribute('viewBox', '0 0 24 24');
+            removeIcon.setAttribute('fill', 'currentColor');
+            removeIcon.innerHTML = '<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>';
+            removeButton.appendChild(removeIcon);
+            
+            // Assemble the file item
+            fileInfoContainer.appendChild(fileName);
+            fileInfoContainer.appendChild(fileDetails);
+            mainContainer.appendChild(previewContainer);
+            mainContainer.appendChild(fileInfoContainer);
+            fileItem.appendChild(mainContainer);
+            fileItem.appendChild(removeButton);
             
             fileList.appendChild(fileItem);
             
