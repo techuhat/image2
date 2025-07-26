@@ -232,6 +232,13 @@ body {
 .z-40 { z-index: 40; }
 .z-50 { z-index: 50; }
 
+/* Object fit utilities */
+.object-contain { object-fit: contain; }
+.object-cover { object-fit: cover; }
+.object-fill { object-fit: fill; }
+.object-none { object-fit: none; }
+.object-scale-down { object-fit: scale-down; }
+
 /* Overflow utilities */
 .overflow-hidden { overflow: hidden; }
 .overflow-y-auto { overflow-y: auto; }

@@ -7,6 +7,16 @@ let imageDataUrls = [];
 
 // File handling functions
 function removeFile(index) {
+    // Cleanup object URL if it exists
+    const fileListContainer = document.getElementById('file-list');
+    const fileItems = fileListContainer.children;
+    if (fileItems[index]) {
+        const img = fileItems[index].querySelector('img');
+        if (img && img.src.startsWith('blob:')) {
+            URL.revokeObjectURL(img.src);
+        }
+    }
+    
     currentFiles.splice(index, 1);
     updateFileList(currentFiles);
 }
@@ -54,10 +64,19 @@ async function updateFileList(files) {
             const fileTypeClass = file.type.startsWith('image/') ? 'text-green-600' : 
                                file.type === 'application/pdf' ? 'text-red-600' : 'text-blue-600';
             
+            // Create image preview for image files
+            let previewContent = '';
+            if (file.type.startsWith('image/')) {
+                const imageUrl = URL.createObjectURL(file);
+                previewContent = `<img src="${imageUrl}" alt="${file.name}" class="w-12 h-12 object-cover rounded-lg">`;
+            } else {
+                previewContent = `<i class="fas ${fileIcon} text-lg ${fileTypeClass}"></i>`;
+            }
+            
             fileItem.innerHTML = `
                 <div class="flex items-start flex-1 min-w-0">
-                    <div class="flex-shrink-0 w-12 h-12 bg-white dark:bg-gray-600 rounded-lg flex items-center justify-center mr-4 shadow-sm">
-                        <i class="fas ${fileIcon} text-lg ${fileTypeClass}"></i>
+                    <div class="flex-shrink-0 w-12 h-12 bg-white dark:bg-gray-600 rounded-lg flex items-center justify-center mr-4 shadow-sm overflow-hidden">
+                        ${previewContent}
                     </div>
                     <div class="flex-1 min-w-0 overflow-hidden">
                         <div class="font-medium text-gray-900 dark:text-white break-words leading-tight">${file.name}</div>
