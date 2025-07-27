@@ -44,19 +44,68 @@
     <meta property="fb:pages" content="">
     
     <!-- Additional SEO Meta Tags -->
-    <meta name="robots" content="index, follow">
-    <meta name="googlebot" content="index, follow">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="bingbot" content="index, follow">
     <meta name="theme-color" content="#4F46E5">
     <meta name="msapplication-TileColor" content="#4F46E5">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="ImagePDF Toolkit">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="ImagePDF Toolkit">
+    
+    <!-- Schema.org Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "ImagePDF Toolkit",
+        "description": "Professional multi-tool Image and PDF Toolkit with advanced client-side processing. Convert, compress, resize images and create PDFs - all in your browser with complete privacy.",
+        "url": "https://techuhat.github.io/toolkit/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
+        "softwareVersion": "2.0",
+        "author": {
+            "@type": "Organization",
+            "name": "TechUhat",
+            "url": "https://github.com/techuhat"
+        },
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "featureList": [
+            "Image to PDF Conversion",
+            "PDF to Images Conversion", 
+            "Image Compression",
+            "Image Resizing",
+            "Format Conversion",
+            "Batch Processing"
+        ]
+    }
+    </script>
+    
+    <!-- Performance and Accessibility -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="dns-prefetch" href="//github.com">
     
     <!-- Canonical URL -->
     <link rel="canonical" href="https://techuhat.github.io/toolkit/">
     
-    <!-- Favicon -->
+    <!-- Alternative Languages (if you add multilingual support) -->
+    <link rel="alternate" hreflang="en" href="https://techuhat.github.io/toolkit/">
+    <link rel="alternate" hreflang="x-default" href="https://techuhat.github.io/toolkit/">
+    
+    <!-- Manifest for PWA -->
+    <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;ImagePDF Toolkit&quot;,&quot;short_name&quot;:&quot;ImagePDF&quot;,&quot;start_url&quot;:&quot;/&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;#ffffff&quot;,&quot;theme_color&quot;:&quot;#4F46E5&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234F46E5'><path d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-4-4h-4v-2h4v2zm0-4H9v-2h6v2z'/></svg>&quot;,&quot;sizes&quot;:&quot;192x192&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
+    
+    <!-- Favicon with better formats -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234F46E5'><path d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-4-4h-4v-2h4v2zm0-4H9v-2h6v2z'/></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234F46E5'><path d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-4-4h-4v-2h4v2zm0-4H9v-2h6v2z'/></svg>">
     
     <!-- PERFORMANCE: Use only minified, purged Tailwind CSS for used classes -->
     <link rel="stylesheet" href="styles.min.css">
@@ -882,11 +931,9 @@
         /* Image preview item enhanced styles */
         .image-preview-item {
             position: relative;
-            width: 100%;
-            max-width: 300px;
-            height: auto;
-            min-height: 200px;
-            border-radius: 12px;
+            width: 150px;
+            height: 150px;
+            border-radius: 8px;
             overflow: hidden;
             transition: all 0.3s ease;
             cursor: pointer;
@@ -894,7 +941,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #1a1a1a;
+            background: #ffffff !important;
+            border: 2px solid #e5e7eb !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .image-preview-item {
+            background: #ffffff !important;
+            border-color: #d1d5db !important;
         }
 
         .image-preview-item img {
@@ -902,9 +956,8 @@
             max-height: 100%;
             width: auto;
             height: auto;
-            object-fit: contain;
-            background: #1a1a1a;
-            border-radius: 8px;
+            object-fit: cover;
+            border-radius: 6px;
         }
 
         .image-preview-item .file-name {
@@ -1266,44 +1319,47 @@
         <div id="progress-bar" class="h-full progress-bar" style="width: 0%"></div>
     </div>
     
+    <!-- Skip to main content link for accessibility -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded-lg z-50">Skip to main content</a>
+    
     <!-- Navigation -->
-    <nav class="glass-effect sticky top-0 z-30 backdrop-blur-lg">
+    <nav class="glass-effect sticky top-0 z-30 backdrop-blur-lg" role="navigation" aria-label="Main navigation">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg" aria-hidden="true">
                         <div class="relative">
-                            <svg class="w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z M8.5 12.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
-                            <svg class="w-4 h-4 text-blue-200 absolute -top-1 -right-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z M8.5 12.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
+                            <svg class="w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z M8.5 12.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
+                            <svg class="w-4 h-4 text-blue-200 absolute -top-1 -right-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z M8.5 12.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
                         </div>
                     </div>
                     <div class="flex flex-col">
-                        <span class="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">ImagePDF Toolkit</span>
+                        <h1 class="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">ImagePDF Toolkit</h1>
                         <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Professional Tools</span>
                     </div>
                 </div>
                 
                 <div class="flex items-center space-x-4">
-                    <button onclick="scrollToSection('tools')" class="hidden md:block text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    <button onclick="scrollToSection('tools')" class="hidden md:block text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-2 py-1" aria-label="Navigate to tools section">
                         Tools
                     </button>
-                    <button onclick="scrollToSection('features')" class="hidden md:block text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    <button onclick="scrollToSection('features')" class="hidden md:block text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-2 py-1" aria-label="Navigate to features section">
                         Features
                     </button>
                     <div class="toggleWrapper">
-                        <input type="checkbox" id="dn" />
-                        <label for="dn" class="toggle">
-                            <span class="toggle__handler">
+                        <input type="checkbox" id="dn" aria-label="Toggle dark mode" />
+                        <label for="dn" class="toggle" aria-label="Dark mode toggle">
+                            <span class="toggle__handler" aria-hidden="true">
                                 <span class="crater crater--1"></span>
                                 <span class="crater crater--2"></span>
                                 <span class="crater crater--3"></span>
                             </span>
-                            <span class="star star--1"></span>
-                            <span class="star star--2"></span>
-                            <span class="star star--3"></span>
-                            <span class="star star--4"></span>
-                            <span class="star star--5"></span>
-                            <span class="star star--6"></span>
+                            <span class="star star--1" aria-hidden="true"></span>
+                            <span class="star star--2" aria-hidden="true"></span>
+                            <span class="star star--3" aria-hidden="true"></span>
+                            <span class="star star--4" aria-hidden="true"></span>
+                            <span class="star star--5" aria-hidden="true"></span>
+                            <span class="star star--6" aria-hidden="true"></span>
                         </label>
                     </div>
                 </div>
@@ -1311,56 +1367,58 @@
         </div>
     </nav>
     
-    <!-- Hero Section -->
-    <section class="gradient-bg py-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div class="fade-in">
-                <h1 class="text-5xl md:text-6xl font-bold text-white mb-6">
-                    Professional Image & PDF Tools
-                </h1>
-                <p class="text-xl md:text-2xl text-white opacity-90 mb-8 max-w-3xl mx-auto">
-                    Convert, compress, resize, and manipulate images and PDFs entirely in your browser. 
-                    No uploads, complete privacy, lightning fast.
-                </p>
-                <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <button onclick="scrollToSection('tools')" class="btn-professional bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg flex items-center justify-center">
-                        <svg class="w-5 h-5 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L362.3 51.7l97.9 97.9 30.1-30.1c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L437.7 172.3 339.7 74.3 172.4 241.7zM96 64C43 64 0 107 0 160V416c0 53 43 96 96 96H352c53 0 96-43 96-96V320c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7-14.3 32-32 32H96c-17.7 0-32-14.3-32-32V160c0-17.7 14.3-32 32-32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H96z"/></svg>
-                        <span>Explore Tools</span>
-                    </button>
+    <!-- Main Content -->
+    <main id="main-content">
+        <!-- Hero Section -->
+        <section class="gradient-bg py-20" aria-labelledby="hero-heading">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <div class="fade-in">
+                    <h2 id="hero-heading" class="text-5xl md:text-6xl font-bold text-white mb-6">
+                        Professional Image & PDF Tools
+                    </h2>
+                    <p class="text-xl md:text-2xl text-white opacity-90 mb-8 max-w-3xl mx-auto">
+                        Convert, compress, resize, and manipulate images and PDFs entirely in your browser. 
+                        No uploads, complete privacy, lightning fast.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <button onclick="scrollToSection('tools')" class="btn-professional bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600" aria-label="Navigate to tools section">
+                            <svg class="w-5 h-5 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" aria-hidden="true"><path fill="currentColor" d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L362.3 51.7l97.9 97.9 30.1-30.1c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L437.7 172.3 339.7 74.3 172.4 241.7zM96 64C43 64 0 107 0 160V416c0 53 43 96 96 96H352c53 0 96-43 96-96V320c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7-14.3 32-32 32H96c-17.7 0-32-14.3-32-32V160c0-17.7 14.3-32 32-32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H96z"/></svg>
+                            <span>Explore Tools</span>
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
-    
-    <!-- Features Section -->
-    <section id="features" class="py-20 bg-white dark:bg-gray-800">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Why Choose Our Toolkit?</h2>
-                <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-                    Advanced client-side processing with enterprise-grade features
-                </p>
-            </div>
-            
-            <!-- Professional Statistics -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
-                <div class="text-center">
-                    <div class="text-3xl md:text-4xl font-bold text-blue-600 mb-2">6+</div>
-                    <div class="text-sm text-gray-600 dark:text-gray-400">Professional Tools</div>
+        </section>
+        
+        <!-- Features Section -->
+        <section id="features" class="py-20 bg-white dark:bg-gray-800" aria-labelledby="features-heading">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 id="features-heading" class="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Why Choose Our Toolkit?</h2>
+                    <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+                        Advanced client-side processing with enterprise-grade features
+                    </p>
                 </div>
-                <div class="text-center">
-                    <div class="text-3xl md:text-4xl font-bold text-green-600 mb-2">100%</div>
-                    <div class="text-sm text-gray-600 dark:text-gray-400">Client-Side</div>
+                
+                <!-- Professional Statistics -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16" role="region" aria-label="Key statistics">
+                    <div class="text-center">
+                        <div class="text-3xl md:text-4xl font-bold text-blue-600 mb-2" aria-label="6 professional tools available">6+</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Professional Tools</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl md:text-4xl font-bold text-green-600 mb-2" aria-label="100 percent client-side processing">100%</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Client-Side</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl md:text-4xl font-bold text-purple-600 mb-2" aria-label="No usage limits">∞</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">No Limits</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl md:text-4xl font-bold text-orange-600 mb-2" aria-label="Zero milliseconds upload time">0ms</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Upload Time</div>
+                    </div>
                 </div>
-                <div class="text-center">
-                    <div class="text-3xl md:text-4xl font-bold text-purple-600 mb-2">∞</div>
-                    <div class="text-sm text-gray-600 dark:text-gray-400">No Limits</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-3xl md:text-4xl font-bold text-orange-600 mb-2">0ms</div>
-                    <div class="text-sm text-gray-600 dark:text-gray-400">Upload Time</div>
-                </div>
-            </div>
             
             <div class="grid md:grid-cols-3 gap-8">
                 <div class="text-center scale-in">
@@ -1505,19 +1563,18 @@
                     <!-- Tool content will be dynamically loaded here -->
                 </div>
             </div>
-        </div>
-    </div>
+    </main>
     
     <!-- Footer -->
-    <footer class="bg-gray-900 text-white py-12">
+    <footer class="bg-gray-900 text-white py-12" role="contentinfo" aria-label="Site footer">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid md:grid-cols-4 gap-8">
                 <div>
                     <div class="flex items-center space-x-3 mb-4">
-                        <div class="w-10 h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg" aria-hidden="true">
                             <div class="relative">
-                                <svg class="w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z M8.5 12.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
-                                <svg class="w-4 h-4 text-blue-200 absolute -top-1 -right-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z M8.5 12.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
+                                <svg class="w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z M8.5 12.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
+                                <svg class="w-4 h-4 text-blue-200 absolute -top-1 -right-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z M8.5 12.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
                             </div>
                         </div>
                         <div class="flex flex-col">

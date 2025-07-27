@@ -1,9 +1,5 @@
-// Global variables
-let currentFiles = [];
-let processedFiles = [];
-let currentTool = '';
-let currentSlideIndex = 0;
-let imageDataUrls = [];
+// Global variables are declared in the HTML file
+// currentFiles, processedFiles, currentTool, currentSlideIndex, imageDataUrls
 
 // File handling functions
 function removeFile(index) {
@@ -19,6 +15,11 @@ function removeFile(index) {
     
     currentFiles.splice(index, 1);
     updateFileList(currentFiles);
+    
+    // Show warning toast for file removal
+    setTimeout(() => {
+        showToast(`🗑️ File removed from processing queue`, 'warning', 2500);
+    }, 100);
 }
 
 function formatFileSize(bytes) {
@@ -44,7 +45,6 @@ async function updateFileList(files) {
     const filePreview = document.getElementById('file-preview');
     const fileList = document.getElementById('file-list');
     const processBtn = document.getElementById('process-btn');
-    const imagePreviewGrid = document.getElementById('image-preview-grid');
     
     if (files.length > 0) {
         filePreview.classList.remove('hidden');
@@ -53,24 +53,54 @@ async function updateFileList(files) {
         // Get image files
         const imageFiles = files.filter(file => file.type.startsWith('image/'));
         
-        // Create file list with enhanced styling and animations
+        // Create file list with debug version
         files.forEach((file, index) => {
+            console.log(`Creating file item for: ${file.name}, index: ${index}`);
+            
+            // Create simple file item
             const fileItem = document.createElement('div');
-            fileItem.className = 'file-item flex items-start justify-between bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600 transition-all duration-200 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-500';
-            fileItem.style.opacity = '0';
-            fileItem.style.transform = 'translateY(10px)';
+            fileItem.style.cssText = `
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                background-color: var(--file-item-bg, #f9fafb);
+                padding: 16px;
+                border-radius: 8px;
+                border: 1px solid var(--file-item-border, #e5e7eb);
+                margin-bottom: 8px;
+                opacity: 0;
+                transform: translateY(10px);
+                transition: all 0.2s ease;
+            `;
+            fileItem.className = 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600';
             
-            const fileIcon = getFileIcon(file.type);
-            const fileTypeClass = file.type.startsWith('image/') ? 'text-green-600' : 
-                               file.type === 'application/pdf' ? 'text-red-600' : 'text-blue-600';
-            
-            // Create main container
-            const mainContainer = document.createElement('div');
-            mainContainer.className = 'flex items-start flex-1 min-w-0';
+            // Create file info with preview
+            const fileInfo = document.createElement('div');
+            fileInfo.style.cssText = `
+                flex: 1;
+                margin-right: 16px;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            `;
+            fileInfo.className = 'text-gray-900 dark:text-white';
             
             // Create preview container
             const previewContainer = document.createElement('div');
-            previewContainer.className = 'flex-shrink-0 w-12 h-12 bg-white dark:bg-gray-600 rounded-lg flex items-center justify-center mr-4 shadow-sm overflow-hidden';
+            previewContainer.style.cssText = `
+                width: 48px;
+                height: 48px;
+                border-radius: 8px;
+                overflow: hidden;
+                flex-shrink: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: white;
+                border: 1px solid #e5e7eb;
+            `;
+            previewContainer.className = 'bg-white dark:bg-gray-600 border-gray-200 dark:border-gray-500';
             
             // Create preview content
             if (file.type.startsWith('image/')) {
@@ -78,72 +108,108 @@ async function updateFileList(files) {
                 const img = document.createElement('img');
                 img.src = imageUrl;
                 img.alt = file.name;
-                img.className = 'w-12 h-12 object-cover rounded-lg';
+                img.style.cssText = `
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    border-radius: 6px;
+                `;
+                img.onload = () => {
+                    console.log('Image preview loaded for:', file.name);
+                };
+                img.onerror = () => {
+                    console.log('Image preview failed for:', file.name);
+                    previewContainer.innerHTML = `
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="text-gray-400">
+                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5-7l-3 3.72L9 13l-3 4h12l-4-5z"/>
+                        </svg>
+                    `;
+                };
                 previewContainer.appendChild(img);
             } else {
-                const icon = document.createElement('i');
-                icon.className = `fas ${fileIcon} text-lg ${fileTypeClass}`;
-                previewContainer.appendChild(icon);
+                // For non-image files, show file type icon
+                const fileIcon = getFileIcon(file.type);
+                const iconColor = file.type.startsWith('image/') ? '#10b981' : 
+                               file.type === 'application/pdf' ? '#ef4444' : '#3b82f6';
+                previewContainer.innerHTML = `
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="${iconColor}">
+                        <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 2 2h12c1.11 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
+                    </svg>
+                `;
             }
             
-            // Create file info container
-            const fileInfoContainer = document.createElement('div');
-            fileInfoContainer.className = 'flex-1 min-w-0 overflow-hidden';
+            // Create text info container
+            const textInfo = document.createElement('div');
+            textInfo.style.cssText = `
+                flex: 1;
+                min-width: 0;
+            `;
+            textInfo.innerHTML = `
+                <div style="font-weight: 600; margin-bottom: 4px; word-break: break-word;" class="text-gray-900 dark:text-white">${file.name}</div>
+                <div style="font-size: 12px;" class="text-gray-500 dark:text-gray-400">${formatFileSize(file.size)} • ${file.type.split('/')[1] || 'Unknown'}</div>
+            `;
             
-            // Create file name
-            const fileName = document.createElement('div');
-            fileName.className = 'font-medium text-gray-900 dark:text-white break-words leading-tight';
-            fileName.textContent = file.name;
+            // Assemble file info
+            fileInfo.appendChild(previewContainer);
+            fileInfo.appendChild(textInfo);
             
-            // Create file details
-            const fileDetails = document.createElement('div');
-            fileDetails.className = 'text-sm text-gray-500 dark:text-gray-400 flex flex-wrap items-center mt-1 gap-1';
-            
-            const fileSize = document.createElement('span');
-            fileSize.textContent = formatFileSize(file.size);
-            fileDetails.appendChild(fileSize);
-            
-            const separator1 = document.createElement('span');
-            separator1.className = 'hidden sm:inline';
-            separator1.textContent = '•';
-            fileDetails.appendChild(separator1);
-            
-            const fileType = document.createElement('span');
-            fileType.className = 'capitalize';
-            fileType.textContent = file.type.split('/')[1] || 'Unknown';
-            fileDetails.appendChild(fileType);
-            
-            if (file.lastModified) {
-                const separator2 = document.createElement('span');
-                separator2.className = 'hidden sm:inline';
-                separator2.textContent = '•';
-                fileDetails.appendChild(separator2);
-                
-                const lastModified = document.createElement('span');
-                lastModified.textContent = new Date(file.lastModified).toLocaleDateString();
-                fileDetails.appendChild(lastModified);
-            }
-            
-            // Create remove button
+            // Create remove button (guaranteed visible)
             const removeButton = document.createElement('button');
-            removeButton.className = 'btn-enhanced flex-shrink-0 ml-4 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200';
-            removeButton.onclick = () => removeFile(index);
+            removeButton.style.cssText = `
+                background: linear-gradient(135deg, #ef4444, #dc2626);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                padding: 10px;
+                cursor: pointer;
+                font-size: 16px;
+                font-weight: bold;
+                min-width: 44px;
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+            `;
+            removeButton.textContent = '✕';
+            removeButton.title = 'Remove file';
+            removeButton.setAttribute('aria-label', `Remove ${file.name} from upload queue`);
+            removeButton.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Remove button clicked for:', file.name, 'index:', index);
+                removeFile(index);
+            };
             
-            const removeIcon = document.createElement('svg');
-            removeIcon.className = 'w-4 h-4';
-            removeIcon.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-            removeIcon.setAttribute('viewBox', '0 0 24 24');
-            removeIcon.setAttribute('fill', 'currentColor');
-            removeIcon.innerHTML = '<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>';
-            removeButton.appendChild(removeIcon);
+            // Enhanced hover effects
+            removeButton.onmouseenter = () => {
+                removeButton.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
+                removeButton.style.transform = 'scale(1.1)';
+                removeButton.style.boxShadow = '0 4px 8px rgba(220, 38, 38, 0.3)';
+            };
+            removeButton.onmouseleave = () => {
+                removeButton.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+                removeButton.style.transform = 'scale(1)';
+                removeButton.style.boxShadow = '0 2px 4px rgba(239, 68, 68, 0.2)';
+            };
             
-            // Assemble the file item
-            fileInfoContainer.appendChild(fileName);
-            fileInfoContainer.appendChild(fileDetails);
-            mainContainer.appendChild(previewContainer);
-            mainContainer.appendChild(fileInfoContainer);
-            fileItem.appendChild(mainContainer);
+            // Assemble
+            fileItem.appendChild(fileInfo);
             fileItem.appendChild(removeButton);
+            
+            // Add hover effect to file item
+            fileItem.onmouseenter = () => {
+                fileItem.style.transform = fileItem.style.transform.includes('translateY(0)') ? 'translateY(-2px)' : fileItem.style.transform;
+                fileItem.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                fileItem.style.borderColor = '#3b82f6';
+            };
+            fileItem.onmouseleave = () => {
+                fileItem.style.transform = fileItem.style.transform.includes('translateY(-2px)') ? 'translateY(0)' : fileItem.style.transform;
+                fileItem.style.boxShadow = 'none';
+                fileItem.style.borderColor = '';
+            };
             
             fileList.appendChild(fileItem);
             
@@ -151,46 +217,21 @@ async function updateFileList(files) {
             setTimeout(() => {
                 fileItem.style.opacity = '1';
                 fileItem.style.transform = 'translateY(0)';
-            }, index * 50);
+                console.log(`File item animated for: ${file.name}`);
+            }, index * 100);
         });
         
         processBtn.disabled = false;
         
-        // Show image previews if there are image files
-        if (imageFiles.length > 0) {
-            imagePreviewGrid.innerHTML = '';
-            imageDataUrls = [];
-            
-            // Generate image previews
-            for (let i = 0; i < Math.min(imageFiles.length, 4); i++) {
-                const file = imageFiles[i];
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    const dataUrl = e.target.result;
-                    imageDataUrls.push(dataUrl);
-                    
-                    const previewItem = document.createElement('div');
-                    previewItem.className = 'image-preview-item';
-                    previewItem.style.backgroundImage = `url(${dataUrl})`;
-                    
-                    imagePreviewGrid.appendChild(previewItem);
-                };
-                
-                reader.readAsDataURL(file);
-            }
-            
-            // Show "more" indicator if there are more than 4 images
-            if (imageFiles.length > 4) {
-                const moreItem = document.createElement('div');
-                moreItem.className = 'image-preview-more';
-                moreItem.innerHTML = `<span>+${imageFiles.length - 4}</span>`;
-                imagePreviewGrid.appendChild(moreItem);
-            }
-            
-            imagePreviewGrid.classList.remove('hidden');
+        // Show enhanced file upload success toast
+        if (files.length === 1) {
+            setTimeout(() => {
+                showToast(`✅ File "${files[0].name}" uploaded successfully!`, 'success', 3000);
+            }, 100);
         } else {
-            imagePreviewGrid.classList.add('hidden');
+            setTimeout(() => {
+                showToast(`🎉 ${files.length} files uploaded successfully!`, 'success', 3000);
+            }, 100);
         }
     } else {
         filePreview.classList.add('hidden');
@@ -222,6 +263,132 @@ function toggleTheme() {
 
 // Initialize theme on page load
 initTheme();
+
+// Setup file input functionality
+function setupFileInput() {
+    const fileInput = document.getElementById('file-input');
+    const fileDropZone = document.querySelector('.file-drop-zone');
+    
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                updateFileList(files);
+            }
+        });
+    }
+    
+    if (fileDropZone) {
+        setupFileDropZone(fileDropZone);
+    }
+}
+
+// Setup drag and drop functionality for file drop zones
+function setupFileDropZone(element) {
+    element.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        element.classList.add('drag-over');
+    });
+    
+    element.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        element.classList.add('drag-over');
+    });
+    
+    element.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        if (!element.contains(e.relatedTarget)) {
+            element.classList.remove('drag-over');
+        }
+    });
+    
+    element.addEventListener('drop', (e) => {
+        e.preventDefault();
+        element.classList.remove('drag-over');
+        
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length > 0) {
+            updateFileList(files);
+        }
+    });
+}
+
+// Global drag and drop functionality
+function setupGlobalDragDrop() {
+    let dragCounter = 0;
+    
+    document.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        dragCounter++;
+        if (currentTool && dragCounter === 1) {
+            showGlobalDropOverlay();
+        }
+    });
+    
+    document.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dragCounter--;
+        if (dragCounter === 0) {
+            hideGlobalDropOverlay();
+        }
+    });
+    
+    document.addEventListener('dragover', (e) => {
+        e.preventDefault();
+    });
+    
+    document.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dragCounter = 0;
+        hideGlobalDropOverlay();
+        
+        if (currentTool && !e.target.closest('.file-drop-zone')) {
+            const files = Array.from(e.dataTransfer.files);
+            if (files.length > 0) {
+                updateFileList(files);
+            }
+        }
+    });
+}
+
+function showGlobalDropOverlay() {
+    let overlay = document.getElementById('global-drop-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'global-drop-overlay';
+        overlay.className = 'fixed inset-0 bg-blue-600/20 backdrop-blur-sm z-50 flex items-center justify-center transition-all duration-300';
+        overlay.innerHTML = `
+            <div class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl border-4 border-dashed border-blue-500 text-center max-w-md mx-4 transform scale-95 hover:scale-100 transition-transform">
+                <svg class="w-16 h-16 text-blue-500 mb-4 animate-bounce" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Drop Files Here</h3>
+                <p class="text-gray-600 dark:text-gray-300">Release to add files to <span class="font-semibold text-blue-600">${getToolDisplayName()}</span></p>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+    }
+    overlay.classList.remove('hidden');
+    setTimeout(() => overlay.style.opacity = '1', 10);
+}
+
+function hideGlobalDropOverlay() {
+    const overlay = document.getElementById('global-drop-overlay');
+    if (overlay) {
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.classList.add('hidden'), 300);
+    }
+}
+
+function getToolDisplayName() {
+    const names = {
+        'image-to-pdf': 'Image to PDF Converter',
+        'pdf-to-images': 'PDF to Images Converter',
+        'image-compressor': 'Image Compressor',
+        'image-resizer': 'Image Resizer',
+        'format-converter': 'Format Converter',
+        'batch-processor': 'Batch Processor'
+    };
+    return names[currentTool] || 'Current Tool';
+}
 
 // Theme toggle event listener and global initialization
 document.addEventListener('DOMContentLoaded', function() {
@@ -275,12 +442,27 @@ function showToast(message, type = 'success', duration = 3000) {
     const toast = document.createElement('div');
     const toastId = 'toast-' + Date.now();
     toast.id = toastId;
-    toast.className = `toast bg-white dark:bg-gray-800 border-l-4 ${
+    toast.className = `toast ${type}-enhanced bg-white dark:bg-gray-800 border-l-4 ${
         type === 'success' ? 'border-green-500' : 
         type === 'error' ? 'border-red-500' : 
         type === 'warning' ? 'border-yellow-500' :
         'border-blue-500'
-    } p-4 rounded-lg shadow-lg transform translate-x-full opacity-0 transition-all duration-300 ease-out`;
+    } p-4 rounded-lg shadow-lg transform translate-x-full opacity-0 transition-all duration-300 ease-out relative overflow-hidden`;
+    
+    // Add custom toast styles based on type
+    toast.style.backgroundImage = `linear-gradient(135deg, 
+        ${type === 'success' ? 'rgba(16, 185, 129, 0.05) 0%, rgba(34, 197, 94, 0.03) 100%' : 
+          type === 'error' ? 'rgba(239, 68, 68, 0.05) 0%, rgba(220, 38, 38, 0.03) 100%' : 
+          type === 'warning' ? 'rgba(245, 158, 11, 0.05) 0%, rgba(217, 119, 6, 0.03) 100%' :
+          'rgba(59, 130, 246, 0.05) 0%, rgba(37, 99, 235, 0.03) 100%'})`;
+    toast.style.transition = 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+    
+    // Add sparkle effects for success toasts
+    const sparkles = type === 'success' ? `
+        <div class="toast-sparkle"></div>
+        <div class="toast-sparkle"></div>
+        <div class="toast-sparkle"></div>
+    ` : '';
     
     // Add additional styles for better visibility
     if (isToolOpen) {
@@ -295,7 +477,8 @@ function showToast(message, type = 'success', duration = 3000) {
                     '<svg class="w-6 h-6 text-blue-500 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>';
     
     toast.innerHTML = `
-        <div class="flex items-center justify-between">
+        ${sparkles}
+        <div class="flex items-center justify-between relative z-10">
             <div class="flex items-center flex-1">
                 ${icon}
                 <span class="text-sm font-medium text-gray-900 dark:text-white">${message}</span>
@@ -304,17 +487,36 @@ function showToast(message, type = 'success', duration = 3000) {
                 <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             </button>
         </div>
-        <div class="absolute bottom-0 left-0 h-1 bg-gradient-to-r ${
-            type === 'success' ? 'from-green-500 to-green-400' :
-            type === 'error' ? 'from-red-500 to-red-400' :
-            type === 'warning' ? 'from-yellow-500 to-yellow-400' :
-            'from-blue-500 to-blue-400'
-        } rounded-bl-lg transition-all duration-${duration} ease-linear" style="width: 100%; animation: toast-progress ${duration}ms linear;"></div>
+        <div class="toast-progress-container">
+            <div class="toast-progress-bar bg-gradient-to-r ${
+                type === 'success' ? 'from-green-500 via-green-400 to-emerald-400' :
+                type === 'error' ? 'from-red-500 via-red-400 to-pink-400' :
+                type === 'warning' ? 'from-yellow-500 via-amber-400 to-orange-400' :
+                'from-blue-500 via-blue-400 to-cyan-400'
+            }" style="width: 100%; animation: toast-progress ${duration}ms cubic-bezier(0.4, 0, 0.2, 1);">
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30" style="animation: shimmer 2s infinite linear;"></div>
+                <div class="absolute inset-0 ${
+                    type === 'success' ? 'bg-gradient-to-r from-green-400 to-emerald-300' :
+                    type === 'error' ? 'bg-gradient-to-r from-red-400 to-pink-300' :
+                    type === 'warning' ? 'bg-gradient-to-r from-yellow-400 to-orange-300' :
+                    'bg-gradient-to-r from-blue-400 to-cyan-300'
+                } opacity-50" style="animation: pulse-glow 1.5s ease-in-out infinite alternate;"></div>
+                
+                <!-- Add animated dots for loading effect -->
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="flex space-x-1 opacity-70">
+                        <div class="w-1 h-1 bg-white rounded-full" style="animation: pulse-glow 0.6s ease-in-out infinite alternate; animation-delay: 0s;"></div>
+                        <div class="w-1 h-1 bg-white rounded-full" style="animation: pulse-glow 0.6s ease-in-out infinite alternate; animation-delay: 0.2s;"></div>
+                        <div class="w-1 h-1 bg-white rounded-full" style="animation: pulse-glow 0.6s ease-in-out infinite alternate; animation-delay: 0.4s;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     `;
     
     container.appendChild(toast);
     
-    // Show toast with animation
+    // Show toast with enhanced animation
     requestAnimationFrame(() => {
         if (window.innerWidth <= 640) {
             // Mobile devices - use opacity animation instead of transform
@@ -408,33 +610,211 @@ function updateProgress(percentage, message = null) {
     const text = container.querySelector('.progress-text');
     
     const clampedPercentage = Math.min(100, Math.max(0, percentage));
+    
+    // Smooth animation for width changes
+    bar.style.transition = 'width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.5s ease';
     bar.style.width = `${clampedPercentage}%`;
     
-    // Update message if provided
+    // Update message with fade effect if provided
     if (message && text) {
-        text.textContent = message;
+        // Create fade effect for message updates
+        text.style.transition = 'opacity 0.3s ease';
+        text.style.opacity = '0';
+        setTimeout(() => {
+            text.textContent = message;
+            text.style.opacity = '1';
+        }, 200);
     }
     
-    // Add completion animation
+    // Add completion animation with enhanced effects
     if (clampedPercentage === 100) {
+        // Enhanced rainbow gradient with better animation
+        bar.style.background = 'linear-gradient(90deg, #10b981, #34d399, #6ee7b7, #34d399, #10b981)';
+        bar.style.backgroundSize = '300% 100%';
+        bar.style.animation = 'rainbow-progress 1.5s linear infinite';
+        bar.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.7)';
         bar.classList.add('animate-pulse');
+        
+        // Add enhanced success sparkle effect with more particles
+        const sparkles = document.createElement('div');
+        sparkles.className = 'absolute inset-0 overflow-hidden';
+        
+        // Create multiple sparkles with varied sizes and animations
+        let sparkleHTML = '';
+        for (let i = 0; i < 12; i++) {
+            const left = Math.random() * 100;
+            const top = Math.random() * 100;
+            const size = Math.random() * 2 + 1; // 1-3px
+            const delay = Math.random() * 0.8;
+            const duration = Math.random() * 0.5 + 0.6; // 0.6-1.1s
+            
+            sparkleHTML += `
+                <div class="absolute w-${size} h-${size} bg-white rounded-full opacity-0" 
+                     style="left: ${left}%; top: ${top}%; animation: sparkle ${duration}s ease-out ${delay}s"></div>
+            `;
+        }
+        sparkles.innerHTML = sparkleHTML;
+        bar.appendChild(sparkles);
+        
+        // Add animated dots for loading effect
+        const dots = document.createElement('div');
+        dots.className = 'absolute inset-0 flex items-center justify-center';
+        dots.innerHTML = `
+            <div class="flex space-x-1 opacity-70">
+                <div class="w-1 h-1 bg-white rounded-full" style="animation: pulse-glow 0.6s ease-in-out infinite alternate; animation-delay: 0s;"></div>
+                <div class="w-1 h-1 bg-white rounded-full" style="animation: pulse-glow 0.6s ease-in-out infinite alternate; animation-delay: 0.2s;"></div>
+                <div class="w-1 h-1 bg-white rounded-full" style="animation: pulse-glow 0.6s ease-in-out infinite alternate; animation-delay: 0.4s;"></div>
+            </div>
+        `;
+        bar.appendChild(dots);
+        
         setTimeout(() => {
             bar.classList.remove('animate-pulse');
-            showProgress(false);
-        }, 500);
-    }
-    
-    // Update progress bar color based on percentage
-    if (clampedPercentage < 30) {
-        bar.className = bar.className.replace(/bg-\w+-\d+/g, '') + ' bg-red-500';
-    } else if (clampedPercentage < 70) {
-        bar.className = bar.className.replace(/bg-\w+-\d+/g, '') + ' bg-yellow-500';
+            // Fade out effect for progress bar
+            container.style.transition = 'opacity 0.5s ease';
+            container.style.opacity = '0';
+            setTimeout(() => {
+                showProgress(false);
+                container.style.opacity = '1';
+                // Show enhanced completion toast
+                showToast('Processing completed successfully! ✨', 'success', 3000);
+            }, 500);
+        }, 1500);
     } else {
-        bar.className = bar.className.replace(/bg-\w+-\d+/g, '') + ' bg-green-500';
+        // Update progress bar color based on percentage with enhanced gradients
+        if (clampedPercentage < 30) {
+            bar.style.background = 'linear-gradient(90deg, #ef4444, #f87171, #fca5a5, #f87171, #ef4444)';
+            bar.style.backgroundSize = '200% 100%';
+            bar.style.animation = 'shimmer 2s infinite linear';
+            bar.style.boxShadow = '0 0 8px rgba(239, 68, 68, 0.4)';
+        } else if (clampedPercentage < 70) {
+            bar.style.background = 'linear-gradient(90deg, #f59e0b, #fbbf24, #fcd34d, #fbbf24, #f59e0b)';
+            bar.style.backgroundSize = '200% 100%';
+            bar.style.animation = 'shimmer 2s infinite linear';
+            bar.style.boxShadow = '0 0 8px rgba(245, 158, 11, 0.4)';
+        } else {
+            bar.style.background = 'linear-gradient(90deg, #10b981, #34d399, #6ee7b7, #34d399, #10b981)';
+            bar.style.backgroundSize = '200% 100%';
+            bar.style.animation = 'shimmer 2s infinite linear';
+            bar.style.boxShadow = '0 0 8px rgba(16, 185, 129, 0.4)';
+        }
+        
+        // Add enhanced pulse effect at certain milestones
+        if (clampedPercentage % 20 === 0 && clampedPercentage > 0) {
+            // Create a flash effect
+            const flash = document.createElement('div');
+            flash.className = 'absolute inset-0 bg-white rounded-full';
+            flash.style.opacity = '0';
+            flash.style.animation = 'pulse-glow 0.6s ease-in-out';
+            bar.appendChild(flash);
+            
+            setTimeout(() => {
+                if (flash.parentElement) {
+                    flash.parentElement.removeChild(flash);
+                }
+            }, 600);
+        }
     }
 }
 
 // Tool management functions
+
+// Image compression logic
+async function compressImageFile(file, quality) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            canvas.toBlob(
+                blob => {
+                    if (blob) {
+                        resolve(blob);
+                    } else {
+                        reject(new Error('Compression failed'));
+                    }
+                },
+                'image/jpeg',
+                quality / 100
+            );
+        };
+        img.onerror = function() {
+            reject(new Error('Image load failed'));
+        };
+        img.src = URL.createObjectURL(file);
+    });
+}
+
+function setupImageCompressor() {
+    const processBtn = document.getElementById('process-btn');
+    const qualitySlider = document.getElementById('quality-slider');
+    const qualityValue = document.getElementById('quality-value');
+    const compressionStats = document.getElementById('compression-stats');
+    const originalSizeEl = document.getElementById('original-size');
+    const compressedSizeEl = document.getElementById('compressed-size');
+    const savedPercentageEl = document.getElementById('saved-percentage');
+    const resultsList = document.getElementById('results-list');
+    const resultsDiv = document.getElementById('results');
+    const downloadBtn = document.getElementById('download-btn');
+
+    if (!processBtn) return;
+
+    qualitySlider.addEventListener('input', function() {
+        qualityValue.textContent = qualitySlider.value;
+    });
+
+    processBtn.onclick = async function() {
+        if (!currentFiles.length) return;
+        processBtn.disabled = true;
+        showProgress(true, 'Compressing images...');
+        let totalOriginal = 0, totalCompressed = 0;
+        processedFiles = [];
+        resultsList.innerHTML = '';
+        for (let i = 0; i < currentFiles.length; i++) {
+            const file = currentFiles[i];
+            if (!file.type.startsWith('image/')) continue;
+            totalOriginal += file.size;
+            try {
+                const compressedBlob = await compressImageFile(file, parseInt(qualitySlider.value));
+                totalCompressed += compressedBlob.size;
+                processedFiles.push(compressedBlob);
+                // Show result item
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between bg-gray-100 dark:bg-gray-800 p-2 rounded mb-2';
+                item.innerHTML = `<span>${file.name}</span><span>${formatFileSize(file.size)} → ${formatFileSize(compressedBlob.size)}</span>`;
+                resultsList.appendChild(item);
+            } catch (e) {
+                showToast(`❌ Compression failed for ${file.name}`, 'error', 3000);
+            }
+            updateProgress(Math.round(((i+1)/currentFiles.length)*100));
+        }
+        showProgress(false);
+        if (totalOriginal > 0) {
+            compressionStats.classList.remove('hidden');
+            originalSizeEl.textContent = formatFileSize(totalOriginal);
+            compressedSizeEl.textContent = formatFileSize(totalCompressed);
+            const saved = totalOriginal > 0 ? Math.round(100 * (totalOriginal - totalCompressed) / totalOriginal) : 0;
+            savedPercentageEl.textContent = saved + '%';
+        }
+        resultsDiv.classList.remove('hidden');
+        downloadBtn.classList.remove('hidden');
+        downloadBtn.disabled = false;
+        processBtn.disabled = false;
+        showToast('Compression completed!', 'success', 2500);
+    };
+    // Download all compressed images as zip (optional, not implemented here)
+}
+
+function initializeTool(toolName) {
+    if (toolName === 'image-compressor') {
+        setupImageCompressor();
+    }
+    // Add other tool initializations here if needed
+}
+
 function openTool(toolName) {
     currentTool = toolName;
     const modal = document.getElementById('tool-modal');
@@ -461,10 +841,20 @@ function openTool(toolName) {
     document.body.style.overflow = 'hidden';
     
     // Initialize tool
-    setTimeout(() => initializeTool(toolName), 100);
+    setTimeout(() => {
+        initializeTool(toolName);
+        setupFileInput();
+    }, 100);
     
-    // Show success toast for better UX
-    showToast(`Opening ${titles[toolName]}...`, 'success', 2000);
+    // Show enhanced success toast with premium animations
+    setTimeout(() => {
+        showToast(`🚀 ${titles[toolName]} loaded successfully!`, 'success', 4000);
+    }, 200);
+    
+    // Show info toast after success for demo
+    setTimeout(() => {
+        showToast(`💡 Ready to process your files with advanced features`, 'info', 3000);
+    }, 1500);
 }
 
 function closeTool() {
@@ -496,7 +886,6 @@ function getToolContent(toolName) {
         <div id="file-preview" class="hidden mb-6">
             <h3 class="text-lg font-semibold mb-4">Selected Files</h3>
             <div id="file-list" class="space-y-2 mb-4"></div>
-            <div id="image-preview-grid" class="image-preview-grid"></div>
         </div>
     `;
     
