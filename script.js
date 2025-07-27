@@ -57,22 +57,17 @@ async function updateFileList(files) {
         files.forEach((file, index) => {
             console.log(`Creating file item for: ${file.name}, index: ${index}`);
             
-            // Create simple file item
+            // Create simple file item with better light mode support
             const fileItem = document.createElement('div');
+            // Use CSS classes for proper theme switching
+            fileItem.className = 'file-item-container bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 mb-3 transition-all duration-200 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-500';
             fileItem.style.cssText = `
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                background-color: var(--file-item-bg, #f9fafb);
-                padding: 16px;
-                border-radius: 8px;
-                border: 1px solid var(--file-item-border, #e5e7eb);
-                margin-bottom: 8px;
                 opacity: 0;
                 transform: translateY(10px);
-                transition: all 0.2s ease;
             `;
-            fileItem.className = 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600';
             
             // Create file info with preview
             const fileInfo = document.createElement('div');
@@ -86,7 +81,7 @@ async function updateFileList(files) {
             `;
             fileInfo.className = 'text-gray-900 dark:text-white';
             
-            // Create preview container
+            // Create preview container with better light mode support
             const previewContainer = document.createElement('div');
             previewContainer.style.cssText = `
                 width: 48px;
@@ -97,10 +92,8 @@ async function updateFileList(files) {
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                background: white;
-                border: 1px solid #e5e7eb;
             `;
-            previewContainer.className = 'bg-white dark:bg-gray-600 border-gray-200 dark:border-gray-500';
+            previewContainer.className = 'bg-gray-200 dark:bg-gray-600 border border-gray-300 dark:border-gray-500';
             
             // Create preview content
             if (file.type.startsWith('image/')) {
@@ -146,7 +139,7 @@ async function updateFileList(files) {
             `;
             textInfo.innerHTML = `
                 <div style="font-weight: 600; margin-bottom: 4px; word-break: break-word;" class="text-gray-900 dark:text-white">${file.name}</div>
-                <div style="font-size: 12px;" class="text-gray-500 dark:text-gray-400">${formatFileSize(file.size)} • ${file.type.split('/')[1] || 'Unknown'}</div>
+                <div style="font-size: 12px;" class="text-gray-600 dark:text-gray-400">${formatFileSize(file.size)} • ${file.type.split('/')[1] || 'Unknown'}</div>
             `;
             
             // Assemble file info

@@ -114,9 +114,9 @@
     
  <style>
         .glass-effect {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(248, 250, 252, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.3);
         }
         
         .dark .glass-effect {
@@ -372,14 +372,52 @@
             to { opacity: 1; transform: scale(1); }
         }
 
+        /* Light mode styles - reducing excessive whiteness */
+        body {
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        
+        .bg-white {
+            background-color: #fdfdfd;
+        }
+        
+        .bg-gray-50 {
+            background-color: #f1f5f9;
+        }
+        
+        .bg-gray-100 {
+            background-color: #e2e8f0;
+        }
+        
+        .text-gray-900 {
+            color: #0f172a;
+        }
+        
+        .text-gray-600 {
+            color: #475569;
+        }
+        
+        .text-gray-500 {
+            color: #64748b;
+        }
+        
+        .border-gray-200 {
+            border-color: #e2e8f0;
+        }
+        
+        .border {
+            border-color: #cbd5e1;
+        }
+
         /* Complete Dark mode styles */
         .dark {
             color-scheme: dark;
         }
         
         .dark body {
-            background-color: #111827;
-            color: #f9fafb;
+            background-color: #111827 !important;
+            color: #f9fafb !important;
         }
         
         .dark .bg-white {
@@ -416,6 +454,159 @@
         
         .theme-transition {
             transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        /* Feature cards styling - similar to tool cards */
+        .feature-card {
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            background-color: #fdfdfd;
+        }
+        
+        .feature-card:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            background-color: #ffffff;
+        }
+        
+        .dark .feature-card {
+            border-color: #374151;
+            background-color: #1f2937;
+        }
+        
+        .dark .feature-card:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Ensure all buttons and clickable elements have pointer cursor */
+        button, 
+        .btn-professional,
+        [onclick] {
+            cursor: pointer !important;
+        }
+        
+        /* Mobile Navigation Menu Styles */
+        .mobile-menu-btn {
+            display: none;
+            flex-direction: column;
+            justify-content: space-around;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        .mobile-menu-btn span {
+            display: block;
+            height: 2px;
+            width: 100%;
+            background-color: currentColor;
+            border-radius: 1px;
+            transition: all 0.3s ease;
+        }
+        
+        .mobile-menu-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+        
+        .mobile-menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+        
+        .mobile-menu-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -6px);
+        }
+        
+        .mobile-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(248, 250, 252, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.3);
+            border-radius: 8px;
+            margin: 8px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 50;
+        }
+        
+        .dark .mobile-menu {
+            background: rgba(31, 41, 55, 0.95);
+            border: 1px solid rgba(75, 85, 99, 0.3);
+        }
+        
+        .mobile-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .mobile-menu-item {
+            display: block;
+            padding: 12px 16px;
+            color: inherit;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            transition: background-color 0.2s ease;
+        }
+        
+        .dark .mobile-menu-item {
+            border-bottom: 1px solid rgba(75, 85, 99, 0.3);
+        }
+        
+        .mobile-menu-item:last-child {
+            border-bottom: none;
+        }
+        
+        .mobile-menu-item:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: flex;
+            }
+            
+            .desktop-nav {
+                display: none;
+            }
+        }
+        
+        /* Performance Optimizations */
+        .optimized-transition {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                       opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform, opacity;
+        }
+        
+        .gpu-accelerated {
+            transform: translateZ(0);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            -webkit-perspective: 1000;
+            perspective: 1000;
+        }
+        
+        /* Reduce motion for accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+        
+        /* Optimize for performance */
+        .tool-card,
+        .feature-card,
+        .btn-professional {
+            contain: layout style paint;
         }
         
         /* Day/Night Toggle Switch Styles */
@@ -1310,7 +1501,7 @@
     
    
 </head>
-<body class="theme-transition bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+<body class="theme-transition bg-slate-50 dark:bg-gray-900 text-slate-800 dark:text-gray-100 min-h-screen">
     <!-- Toast Container -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2 md:top-4 md:right-4 sm:top-24 sm:left-4 sm:right-4 sm:z-[100000] sm:transform-none sm:w-[calc(100vw-32px)]"></div>
     
@@ -1318,9 +1509,6 @@
     <div id="progress-container" class="fixed top-0 left-0 w-full h-1 z-40 hidden">
         <div id="progress-bar" class="h-full progress-bar" style="width: 0%"></div>
     </div>
-    
-    <!-- Skip to main content link for accessibility -->
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded-lg z-50">Skip to main content</a>
     
     <!-- Navigation -->
     <nav class="glass-effect sticky top-0 z-30 backdrop-blur-lg" role="navigation" aria-label="Main navigation">
@@ -1334,18 +1522,30 @@
                         </div>
                     </div>
                     <div class="flex flex-col">
-                        <h1 class="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">ImagePDF Toolkit</h1>
+                        <h1 class="text-xl font-bold text-gray-900 dark:text-white">ImagePDF Toolkit</h1>
                         <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Professional Tools</span>
                     </div>
                 </div>
                 
                 <div class="flex items-center space-x-4">
-                    <button onclick="scrollToSection('tools')" class="hidden md:block text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-2 py-1" aria-label="Navigate to tools section">
-                        Tools
-                    </button>
-                    <button onclick="scrollToSection('features')" class="hidden md:block text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-2 py-1" aria-label="Navigate to features section">
-                        Features
-                    </button>
+                    <!-- Desktop Navigation -->
+                    <div class="desktop-nav flex items-center space-x-4">
+                        <button onclick="scrollToSection('tools')" class="hidden md:block text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-2 py-1 cursor-pointer" aria-label="Navigate to tools section">
+                            Tools
+                        </button>
+                        <button onclick="scrollToSection('features')" class="hidden md:block text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-2 py-1 cursor-pointer" aria-label="Navigate to features section">
+                            Features
+                        </button>
+                    </div>
+                    
+                    <!-- Mobile Menu Button -->
+                    <div class="mobile-menu-btn md:hidden" onclick="toggleMobileMenu()" aria-label="Toggle mobile menu">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    
+                    <!-- Theme Toggle -->
                     <div class="toggleWrapper">
                         <input type="checkbox" id="dn" aria-label="Toggle dark mode" />
                         <label for="dn" class="toggle" aria-label="Dark mode toggle">
@@ -1362,6 +1562,16 @@
                             <span class="star star--6" aria-hidden="true"></span>
                         </label>
                     </div>
+                </div>
+                
+                <!-- Mobile Menu -->
+                <div class="mobile-menu" id="mobile-menu">
+                    <a href="#" class="mobile-menu-item" onclick="scrollToSection('tools'); closeMobileMenu();">
+                        🛠️ Tools
+                    </a>
+                    <a href="#" class="mobile-menu-item" onclick="scrollToSection('features'); closeMobileMenu();">
+                        ⭐ Features
+                    </a>
                 </div>
             </div>
         </div>
@@ -1381,7 +1591,7 @@
                         No uploads, complete privacy, lightning fast.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                        <button onclick="scrollToSection('tools')" class="btn-professional bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600" aria-label="Navigate to tools section">
+                        <button onclick="scrollToSection('tools')" class="btn-professional bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 transition-all transform hover:scale-105 shadow-lg flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600 cursor-pointer" aria-label="Navigate to tools section">
                             <svg class="w-5 h-5 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" aria-hidden="true"><path fill="currentColor" d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L362.3 51.7l97.9 97.9 30.1-30.1c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L437.7 172.3 339.7 74.3 172.4 241.7zM96 64C43 64 0 107 0 160V416c0 53 43 96 96 96H352c53 0 96-43 96-96V320c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7-14.3 32-32 32H96c-17.7 0-32-14.3-32-32V160c0-17.7 14.3-32 32-32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H96z"/></svg>
                             <span>Explore Tools</span>
                         </button>
@@ -1391,11 +1601,11 @@
         </section>
         
         <!-- Features Section -->
-        <section id="features" class="py-20 bg-white dark:bg-gray-800" aria-labelledby="features-heading">
+        <section id="features" class="py-20 bg-slate-50 dark:bg-gray-800" aria-labelledby="features-heading">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-16">
-                    <h2 id="features-heading" class="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Why Choose Our Toolkit?</h2>
-                    <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+                    <h2 id="features-heading" class="text-4xl font-bold mb-4 text-slate-900 dark:text-white">Why Choose Our Toolkit?</h2>
+                    <p class="text-xl text-slate-700 dark:text-gray-300 max-w-3xl mx-auto">
                         Advanced client-side processing with enterprise-grade features
                     </p>
                 </div>
@@ -1404,56 +1614,56 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16" role="region" aria-label="Key statistics">
                     <div class="text-center">
                         <div class="text-3xl md:text-4xl font-bold text-blue-600 mb-2" aria-label="6 professional tools available">6+</div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400">Professional Tools</div>
+                        <div class="text-sm text-slate-700 dark:text-gray-400">Professional Tools</div>
                     </div>
                     <div class="text-center">
                         <div class="text-3xl md:text-4xl font-bold text-green-600 mb-2" aria-label="100 percent client-side processing">100%</div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400">Client-Side</div>
+                        <div class="text-sm text-slate-700 dark:text-gray-400">Client-Side</div>
                     </div>
                     <div class="text-center">
                         <div class="text-3xl md:text-4xl font-bold text-purple-600 mb-2" aria-label="No usage limits">∞</div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400">No Limits</div>
+                        <div class="text-sm text-slate-700 dark:text-gray-400">No Limits</div>
                     </div>
                     <div class="text-center">
                         <div class="text-3xl md:text-4xl font-bold text-orange-600 mb-2" aria-label="Zero milliseconds upload time">0ms</div>
-                        <div class="text-sm text-gray-600 dark:text-gray-400">Upload Time</div>
+                        <div class="text-sm text-slate-700 dark:text-gray-400">Upload Time</div>
                     </div>
                 </div>
             
             <div class="grid md:grid-cols-3 gap-8">
-                <div class="text-center scale-in">
+                <div class="feature-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl scale-in">
                     <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
                         <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 2.18l6 2.67v5.15c0 4.54-2.77 8.62-6 9.93-3.23-1.31-6-5.39-6-9.93V5.85l6-2.67z"/></svg>
                     </div>
-                    <h3 class="text-xl font-semibold mb-2">100% Private</h3>
-                    <p class="text-gray-600 dark:text-gray-300">All processing happens in your browser. No uploads, no tracking.</p>
+                    <h3 class="text-xl font-semibold mb-2 text-center text-gray-900 dark:text-white">100% Private</h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-center">All processing happens in your browser. No uploads, no tracking.</p>
                 </div>
                 
-                <div class="text-center scale-in" style="animation-delay: 0.1s;">
+                <div class="feature-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl scale-in" style="animation-delay: 0.1s;">
                     <div class="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
                         <svg class="w-6 h-6 text-green-600 dark:text-green-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M11 21h-1l1-7H7.5c-.88 0-.33-.75-.31-.78C8.48 10.94 10.42 7.54 13.01 3h1l-1 7h3.51c.4 0 .62.19.4.66C12.97 17.55 11 21 11 21z"/></svg>
                     </div>
-                    <h3 class="text-xl font-semibold mb-2">Lightning Fast</h3>
-                    <p class="text-gray-600 dark:text-gray-300">Optimized algorithms for instant processing and conversion.</p>
+                    <h3 class="text-xl font-semibold mb-2 text-center text-gray-900 dark:text-white">Lightning Fast</h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-center">Optimized algorithms for instant processing and conversion.</p>
                 </div>
                 
-                <div class="text-center scale-in" style="animation-delay: 0.2s;">
+                <div class="feature-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl scale-in" style="animation-delay: 0.2s;">
                     <div class="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
                         <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                     </div>
-                    <h3 class="text-xl font-semibold mb-2">Batch Processing</h3>
-                    <p class="text-gray-600 dark:text-gray-300">Handle multiple files simultaneously with smart optimization.</p>
+                    <h3 class="text-xl font-semibold mb-2 text-center text-gray-900 dark:text-white">Batch Processing</h3>
+                    <p class="text-gray-600 dark:text-gray-300 text-center">Handle multiple files simultaneously with smart optimization.</p>
                 </div>
             </div>
         </div>
     </section>
     
     <!-- Tools Section -->
-    <section id="tools" class="py-20 bg-gray-50 dark:bg-gray-900">
+    <section id="tools" class="py-20 bg-blue-50/30 dark:bg-gray-900">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold mb-4">Professional Tools</h2>
-                <p class="text-xl text-gray-600 dark:text-gray-300">
+                <h2 class="text-4xl font-bold mb-4 text-slate-900 dark:text-white">Professional Tools</h2>
+                <p class="text-xl text-slate-700 dark:text-gray-300">
                     Choose from our comprehensive suite of image and PDF tools
                 </p>
             </div>
@@ -1553,7 +1763,7 @@
                 <div class="p-6 border-b dark:border-gray-700">
                     <div class="flex justify-between items-center">
                         <h2 id="tool-title" class="text-2xl font-bold">Tool Workspace</h2>
-                        <button onclick="closeTool()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                        <button onclick="closeTool()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer">
                             <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
                         </button>
                     </div>
@@ -1630,12 +1840,144 @@
     </footer>
     
     <script>
+        // Performance Optimization Functions
+        
+        // Debounce function for better performance
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
+        // Throttle function for scroll events
+        function throttle(func, limit) {
+            let inThrottle;
+            return function() {
+                const args = arguments;
+                const context = this;
+                if (!inThrottle) {
+                    func.apply(context, args);
+                    inThrottle = true;
+                    setTimeout(() => inThrottle = false, limit);
+                }
+            }
+        }
+        
+        // Optimized file processing with Web Workers simulation
+        function processFileOptimized(file, options = {}) {
+            return new Promise((resolve, reject) => {
+                // Use requestIdleCallback for better performance
+                const processChunk = (deadline) => {
+                    try {
+                        if (deadline.timeRemaining() > 0 || deadline.didTimeout) {
+                            // Process file in chunks
+                            const reader = new FileReader();
+                            reader.onload = (e) => resolve(e.target.result);
+                            reader.onerror = reject;
+                            reader.readAsDataURL(file);
+                        } else {
+                            requestIdleCallback(processChunk);
+                        }
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                
+                if (window.requestIdleCallback) {
+                    requestIdleCallback(processChunk);
+                } else {
+                    // Fallback for browsers without requestIdleCallback
+                    setTimeout(() => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    }, 0);
+                }
+            });
+        }
+        
+        // Memory optimization - clean up object URLs
+        function cleanupObjectURLs() {
+            if (window.objectURLs) {
+                window.objectURLs.forEach(url => {
+                    try {
+                        URL.revokeObjectURL(url);
+                    } catch (e) {
+                        console.warn('Failed to revoke object URL:', e);
+                    }
+                });
+                window.objectURLs = [];
+            }
+        }
+        
+        // Initialize object URLs array
+        if (!window.objectURLs) {
+            window.objectURLs = [];
+        }
+        
+        // Image compression with better quality control
+        function compressImageOptimized(file, quality = 0.8, maxWidth = 1920, maxHeight = 1080) {
+            return new Promise((resolve) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onload = () => {
+                    // Calculate optimal dimensions
+                    let { width, height } = img;
+                    
+                    if (width > maxWidth || height > maxHeight) {
+                        const ratio = Math.min(maxWidth / width, maxHeight / height);
+                        width *= ratio;
+                        height *= ratio;
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    // Use better image rendering
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    canvas.toBlob(resolve, file.type, quality);
+                };
+                
+                img.src = URL.createObjectURL(file);
+                window.objectURLs.push(img.src);
+            });
+        }
+        
         // Global variables
         let currentFiles = [];
         let processedFiles = [];
         let currentTool = '';
         let currentSlideIndex = 0;
         let imageDataUrls = [];
+        
+        // Performance monitoring
+        const performanceMonitor = {
+            startTime: 0,
+            endTime: 0,
+            
+            start() {
+                this.startTime = performance.now();
+            },
+            
+            end(operation = 'operation') {
+                this.endTime = performance.now();
+                const duration = this.endTime - this.startTime;
+                console.log(`${operation} took ${duration.toFixed(2)} milliseconds`);
+                return duration;
+            }
+        };
         
         // Theme Management
         function initTheme() {
@@ -1661,6 +2003,72 @@
         
         // Initialize theme on page load
         initTheme();
+        
+        // Mobile Menu Functions
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const menuBtn = document.querySelector('.mobile-menu-btn');
+            
+            if (mobileMenu && menuBtn) {
+                mobileMenu.classList.toggle('show');
+                menuBtn.classList.toggle('active');
+            }
+        }
+        
+        function closeMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const menuBtn = document.querySelector('.mobile-menu-btn');
+            
+            if (mobileMenu && menuBtn) {
+                mobileMenu.classList.remove('show');
+                menuBtn.classList.remove('active');
+            }
+        }
+        
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const mobileMenu = document.getElementById('mobile-menu');
+            const menuBtn = document.querySelector('.mobile-menu-btn');
+            const nav = document.querySelector('nav');
+            
+            if (mobileMenu && menuBtn && nav && !nav.contains(event.target)) {
+                mobileMenu.classList.remove('show');
+                menuBtn.classList.remove('active');
+            }
+        });
+        
+        // Memory cleanup function
+        function cleanupMemory() {
+            // Clean up object URLs to prevent memory leaks
+            if (window.objectURLs) {
+                window.objectURLs.forEach(url => {
+                    try {
+                        URL.revokeObjectURL(url);
+                    } catch (e) {
+                        console.warn('Failed to revoke object URL:', e);
+                    }
+                });
+                window.objectURLs = [];
+            }
+            
+            // Force garbage collection hint
+            if (window.gc) {
+                window.gc();
+            }
+        }
+        
+        // Initialize object URLs tracking
+        if (!window.objectURLs) {
+            window.objectURLs = [];
+        }
+        
+        // Optimize scroll performance with throttling
+        const optimizedScrollHandler = throttle(() => {
+            // Smooth scroll performance optimizations
+            document.documentElement.style.scrollBehavior = 'smooth';
+        }, 16); // 60fps
+        
+        window.addEventListener('scroll', optimizedScrollHandler, { passive: true });
         
         // Theme toggle event listener and global initialization
         document.addEventListener('DOMContentLoaded', function() {
@@ -2002,7 +2410,7 @@
                     <div class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl border-4 border-dashed border-blue-500 text-center max-w-md mx-4 transform scale-95 hover:scale-100 transition-transform">
                         <svg class="w-16 h-16 text-blue-500 mb-4 animate-bounce" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
                         <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Drop Files Here</h3>
-                        <p class="text-gray-600 dark:text-gray-300">Release to add files to <span class="font-semibold text-blue-600">${getToolDisplayName()}</span></p>
+                        <p class="text-slate-700 dark:text-gray-300">Release to add files to <span class="font-semibold text-blue-600">${getToolDisplayName()}</span></p>
                     </div>
                 `;
                 document.body.appendChild(overlay);
