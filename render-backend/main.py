@@ -37,11 +37,27 @@ try:
 except ImportError:
     PIL_AVAILABLE = False
 
+# Import additional libraries for DOCX to PDF and PDF compression
+try:
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import letter, A4
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+    REPORTLAB_AVAILABLE = True
+except ImportError:
+    REPORTLAB_AVAILABLE = False
+
+try:
+    import docx2txt
+    DOCX2TXT_AVAILABLE = True
+except ImportError:
+    DOCX2TXT_AVAILABLE = False
+
 # Initialize FastAPI
 app = FastAPI(
     title="PDF Tools & Image Compressor API",
-    description="Convert PDF to DOCX and compress images",
-    version="2.0.0",
+    description="Convert PDF to DOCX, DOCX to PDF, compress PDFs and images",
+    version="2.1.0",
     docs_url="/docs",
     redoc_url="/redoc"
 )
@@ -63,15 +79,19 @@ async def health_check():
     return {
         "status": "healthy",
         "message": "PDF Tools & Image Compressor API is running",
-        "version": "2.0.0",
+        "version": "2.1.0",
         "features": {
             "pdf_to_docx": PDF2DOCX_AVAILABLE or PYMUPDF_AVAILABLE,
+            "docx_to_pdf": REPORTLAB_AVAILABLE and DOCX2TXT_AVAILABLE,
+            "pdf_compression": PYMUPDF_AVAILABLE,
             "image_compression": PIL_AVAILABLE
         },
         "libraries": {
             "pdf2docx": PDF2DOCX_AVAILABLE,
             "pymupdf": PYMUPDF_AVAILABLE,
             "python_docx": PYTHON_DOCX_AVAILABLE,
+            "reportlab": REPORTLAB_AVAILABLE,
+            "docx2txt": DOCX2TXT_AVAILABLE,
             "pillow": PIL_AVAILABLE
         }
     }
@@ -231,6 +251,215 @@ async def convert_pdf_to_docx(file: UploadFile = File(...)):
         raise HTTPException(
             status_code=500, 
             detail=f"Internal server error during conversion: {str(e)}"
+        )
+
+# PDF Compression Endpoint
+@app.post("/compress-pdf")
+async def compress_pdf(
+    file: UploadFile = File(...),
+    quality: int = Form(default=4, description="Compression level (0-9, lower is better quality)")
+):
+    """
+    Compress PDF files to reduce file size
+    Supports files up to 100MB
+    """
+    
+    if not PYMUPDF_AVAILABLE:
+        raise HTTPException(status_code=500, detail="PDF compression not available - PyMuPDF not installed")
+    
+    # Validate file type
+    if not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Only PDF files are supported")
+    
+    # Validate quality
+    if not 0 <= quality <= 9:
+        raise HTTPException(status_code=400, detail="Quality must be between 0 and 9")
+    
+    # Check file size (100MB limit)
+    file_content = await file.read()
+    if len(file_content) > 100 * 1024 * 1024:  # 100MB
+        raise HTTPException(status_code=413, detail="File too large. Maximum size is 100MB")
+    
+    try:
+        # Create temporary files
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_input:
+            temp_input.write(file_content)
+            temp_input_path = temp_input.name
+        
+        temp_output_path = tempfile.mktemp(suffix='.pdf')
+        
+        # Open and compress PDF
+        doc = fitz.open(temp_input_path)
+        
+        # Compression options
+        deflate_level = quality  # 0-9, where 9 is maximum compression
+        
+        # Save with compression
+        doc.save(
+            temp_output_path,
+            garbage=4,  # Remove unused objects
+            deflate=True,  # Enable deflate compression
+            deflate_images=True,  # Compress images
+            deflate_fonts=True,  # Compress fonts
+            linear=True,  # Linearize for web viewing
+            clean=True,  # Clean up
+            pretty=False,  # Don't format for readability
+            ascii=False,  # Don't force ASCII encoding
+            expand=0,  # Don't expand
+            compression=deflate_level  # Compression level
+        )
+        
+        doc.close()
+        
+        # Read compressed file
+        with open(temp_output_path, 'rb') as compressed_file:
+            compressed_content = compressed_file.read()
+        
+        # Calculate compression ratio
+        original_size = len(file_content)
+        compressed_size = len(compressed_content)
+        compression_ratio = (1 - compressed_size / original_size) * 100
+        
+        # Generate output filename
+        base_name = Path(file.filename).stem
+        output_filename = f"{base_name}_compressed.pdf"
+        
+        # Clean up temporary files
+        try:
+            os.unlink(temp_input_path)
+            os.unlink(temp_output_path)
+        except:
+            pass
+        
+        return StreamingResponse(
+            io.BytesIO(compressed_content),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={output_filename}",
+                "X-Original-Size": str(original_size),
+                "X-Compressed-Size": str(compressed_size),
+                "X-Compression-Ratio": f"{compression_ratio:.1f}%",
+                "X-Quality-Level": str(quality)
+            }
+        )
+        
+    except Exception as e:
+        # Clean up on error
+        try:
+            if 'temp_input_path' in locals():
+                os.unlink(temp_input_path)
+            if 'temp_output_path' in locals() and os.path.exists(temp_output_path):
+                os.unlink(temp_output_path)
+        except:
+            pass
+        
+        raise HTTPException(
+            status_code=500,
+            detail=f"PDF compression failed: {str(e)}"
+        )
+
+# DOCX to PDF Conversion Endpoint
+@app.post("/docx-to-pdf")
+async def convert_docx_to_pdf(file: UploadFile = File(...)):
+    """
+    Convert DOCX to PDF
+    Supports files up to 50MB
+    """
+    
+    if not (REPORTLAB_AVAILABLE and DOCX2TXT_AVAILABLE):
+        raise HTTPException(
+            status_code=500, 
+            detail="DOCX to PDF conversion not available - Missing required libraries (reportlab, docx2txt)"
+        )
+    
+    # Validate file type
+    if not file.filename.lower().endswith('.docx'):
+        raise HTTPException(status_code=400, detail="Only DOCX files are supported")
+    
+    # Check file size (50MB limit)
+    file_content = await file.read()
+    if len(file_content) > 50 * 1024 * 1024:  # 50MB
+        raise HTTPException(status_code=413, detail="File too large. Maximum size is 50MB")
+    
+    try:
+        # Create temporary files
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as temp_docx:
+            temp_docx.write(file_content)
+            temp_docx_path = temp_docx.name
+        
+        temp_pdf_path = tempfile.mktemp(suffix='.pdf')
+        
+        # Extract text from DOCX
+        text = docx2txt.process(temp_docx_path)
+        
+        if not text or not text.strip():
+            raise HTTPException(status_code=400, detail="No text content found in DOCX file")
+        
+        # Create PDF using ReportLab
+        doc = SimpleDocTemplate(
+            temp_pdf_path,
+            pagesize=A4,
+            rightMargin=72,
+            leftMargin=72,
+            topMargin=72,
+            bottomMargin=72
+        )
+        
+        # Get styles
+        styles = getSampleStyleSheet()
+        story = []
+        
+        # Split text into paragraphs
+        paragraphs = text.split('\n')
+        
+        for para_text in paragraphs:
+            if para_text.strip():
+                # Create paragraph
+                p = Paragraph(para_text.strip(), styles['Normal'])
+                story.append(p)
+                story.append(Spacer(1, 12))  # Add space between paragraphs
+        
+        # Build PDF
+        doc.build(story)
+        
+        # Read the converted file
+        with open(temp_pdf_path, 'rb') as pdf_file:
+            pdf_content = pdf_file.read()
+        
+        # Generate output filename
+        output_filename = f"{file.filename.rsplit('.', 1)[0]}.pdf"
+        
+        # Clean up temporary files
+        try:
+            os.unlink(temp_docx_path)
+            os.unlink(temp_pdf_path)
+        except:
+            pass
+        
+        return StreamingResponse(
+            io.BytesIO(pdf_content),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={output_filename}",
+                "X-Conversion-Method": "docx2txt+reportlab"
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Clean up on error
+        try:
+            if 'temp_docx_path' in locals():
+                os.unlink(temp_docx_path)
+            if 'temp_pdf_path' in locals() and os.path.exists(temp_pdf_path):
+                os.unlink(temp_pdf_path)
+        except:
+            pass
+        
+        raise HTTPException(
+            status_code=500,
+            detail=f"DOCX to PDF conversion failed: {str(e)}"
         )
 
 # Image Compression Endpoint
@@ -399,6 +628,20 @@ async def get_capabilities():
             "max_file_size": "100MB",
             "supported_input": ["PDF"],
             "supported_output": ["DOCX"]
+        },
+        "docx_to_pdf": {
+            "available": REPORTLAB_AVAILABLE and DOCX2TXT_AVAILABLE,
+            "max_file_size": "50MB",
+            "supported_input": ["DOCX"],
+            "supported_output": ["PDF"],
+            "features": ["Text conversion", "Basic formatting"]
+        },
+        "pdf_compression": {
+            "available": PYMUPDF_AVAILABLE,
+            "max_file_size": "100MB",
+            "supported_input": ["PDF"],
+            "supported_output": ["PDF"],
+            "features": ["Size reduction", "Quality control", "Image compression"]
         },
         "image_compression": {
             "available": PIL_AVAILABLE,

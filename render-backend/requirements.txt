@@ -7,3 +7,5 @@ aiofiles
 python-docx
 PyMuPDF
 Pillow
+reportlab
+docx2txt

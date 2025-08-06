@@ -4,7 +4,7 @@ services:
     env: python
     runtime: python-3.11
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn -k uvicorn.workers.UvicornWorker main:app --host 0.0.0.0 --port $PORT
+    startCommand: gunicorn -k uvicorn.workers.UvicornWorker main:app --host 0.0.0.0 --port $PORT --timeout 120 --workers 1
     plan: free
     region: oregon
     rootDir: render-backend

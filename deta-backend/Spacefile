@@ -1,2 +1,0 @@
-engine = "python3.11"
-entrypoint = "uvicorn main:app --host=0.0.0.0 --port=$PORT"
