@@ -1,0 +1,35 @@
+# Ignore root package.json to prevent Node.js detection
+/package.json
+
+# Ignore frontend files
+/index.html
+/styles.min.css
+/script.js
+/service-worker.js
+/css/
+/js/
+/tools/
+/images/
+/assets/
+
+# Ignore documentation
+/README.md
+/DEPLOYMENT_INSTRUCTIONS.md
+/IMPROVEMENTS.md
+/QUICK_START.md
+/RAILWAY_DEPLOYMENT.md
+/RAILWAY_GUIDE.md
+/ALTERNATIVE_DEPLOYMENT.md
+
+# Ignore other backend implementations
+/deta-backend/
+/backend-example/
+
+# Ignore batch files
+*.bat
+
+# Ignore misc files
+/manifest.json
+/robots.txt
+/sitemap.xml
+/CNAME
