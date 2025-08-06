@@ -31,7 +31,7 @@ A comprehensive, privacy-focused toolkit for image and PDF processing. All opera
 ## 🚀 Getting Started
 
 ### Online Access
-Visit the live toolkit at: `https://techuhat.github.io/toolkit/`
+Visit the live toolkit at: `https://yourusername.github.io/image2/`
 
 ### Local Installation
 1. Clone or download this repository
@@ -244,8 +244,8 @@ For issues, feature requests, or questions:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/techuhat/toolkit.git
-   cd toolkit
+   git clone https://github.com/yourusername/image2.git
+   cd image2
    ```
 
 2. **Serve locally** (any static server)
@@ -399,9 +399,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **GitHub Issues**: [Report bugs](https://github.com/techuhat/toolkit/issues)
+- **GitHub Issues**: [Report bugs](https://github.com/yourusername/image2/issues)
 - **Email**: [Contact support](mailto:support@techuhat.com)
-- **Documentation**: [Wiki](https://github.com/techuhat/toolkit/wiki)
+- **Documentation**: [Wiki](https://github.com/yourusername/image2/wiki)
 
 ---
 

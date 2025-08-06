@@ -12,7 +12,7 @@
 1. **Visit Railway**: https://railway.app
 2. **Login** with GitHub account
 3. **New Project** → **Deploy from GitHub repo**
-4. **Select** your toolkit repository
+4. **Select** your image2 repository
 5. **Configure**:
    - **Root Directory**: `deta-backend`
    - **Start Command**: Auto-detected from Procfile
