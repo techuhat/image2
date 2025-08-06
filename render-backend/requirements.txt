@@ -4,3 +4,5 @@ python-multipart
 pdf2docx
 aiofiles
 python-docx
+PyMuPDF
+Pillow
