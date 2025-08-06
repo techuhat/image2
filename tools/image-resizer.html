@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Image Resizer - Resize Images Online | ImagePDF Toolkit</title>
+    <meta name="description" content="Resize images to custom dimensions with aspect ratio control. Free online image resizer with high quality output. No uploads, 100% client-side processing." />
+    <meta name="keywords" content="image resizer, resize images, image dimensions, scale images, photo resizer" />
+    <meta name="author" content="ImagePDF Toolkit" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Image Resizer - Resize Images Online" />
+    <meta property="og:description" content="Resize images to custom dimensions with aspect ratio control. Free online image resizer with high quality output." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://techuhat.github.io/toolkit/tools/image-resizer.html" />
+    <meta property="og:image" content="../images/og.png" />
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Image Resizer - Resize Images Online" />
+    <meta name="twitter:description" content="Resize images to custom dimensions with aspect ratio control. Free online image resizer with high quality output." />
+    <meta name="twitter:image" content="../images/og.png" />
+
+    <!-- Additional SEO Meta Tags -->
+    <meta name="theme-color" content="#EA580C" />
+    <link rel="canonical" href="https://techuhat.github.io/toolkit/tools/image-resizer.html" />
+
+    <!-- Schema.org Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Image Resizer",
+        "description": "Resize images to custom dimensions with aspect ratio control. Free online image resizer with high quality output.",
+        "url": "https://techuhat.github.io/toolkit/tools/image-resizer.html",
+        "applicationCategory": "ImageEditor",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
+        "softwareVersion": "2.0",
+        "author": {
+            "@type": "Organization",
+            "name": "TechUhat",
+            "url": "https://github.com/techuhat"
+        },
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        }
+    }
+    </script>
+
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="../assets/favicon/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="../assets/favicon/favicon-16x16.png" />
+    <link rel="manifest" href="../manifest.json" />
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="../styles.min.css" />
+    <link rel="stylesheet" href="../tailwind-complete.css" />
+    <link rel="stylesheet" href="../css/all.min.css" />
+    <link rel="stylesheet" href="../css/premium-buttons.css" />
+    
+    <!-- Theme initialization script - runs immediately -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+
+    <style>
+        :root {
+            --primary-color: #EA580C;
+            --primary-hover: #DC2626;
+        }
+
+        .tool-gradient {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+        }
+
+        .file-drop-zone {
+            background: linear-gradient(135deg, rgba(234, 88, 12, 0.1), rgba(220, 38, 38, 0.1));
+            border: 2px dashed var(--primary-color);
+            transition: all 0.3s ease;
+        }
+
+        .file-drop-zone.drag-over {
+            background: linear-gradient(135deg, rgba(234, 88, 12, 0.2), rgba(220, 38, 38, 0.2));
+            border-color: var(--primary-hover);
+            transform: scale(1.02);
+        }
+
+        .dimension-input {
+            background: linear-gradient(135deg, rgba(234, 88, 12, 0.05), rgba(220, 38, 38, 0.05));
+            border: 1px solid rgba(234, 88, 12, 0.3);
+        }
+
+        /* Day/Night Toggle Switch Styles */
+        .toggleWrapper {
+            position: relative !important;
+            overflow: hidden !important;
+            padding: 0 !important;
+            display: inline-block !important;
+        }
+
+        .toggleWrapper input {
+            position: absolute !important;
+            left: -9999px !important;
+            opacity: 0 !important;
+        }
+
+        /* Default state - Day mode */
+        .toggle {
+            cursor: pointer !important;
+            display: inline-block !important;
+            position: relative !important;
+            width: 45px !important;
+            height: 25px !important;
+            background-color: #83D8FF !important;
+            border-radius: 84px !important;
+            transition: background-color 200ms cubic-bezier(0.445, 0.05, 0.55, 0.95) !important;
+        }
+
+        .toggle__handler {
+            display: inline-block !important;
+            position: relative !important;
+            z-index: 1 !important;
+            top: 2px !important;
+            left: 2px !important;
+            width: 21px !important;
+            height: 21px !important;
+            background-color: #FFCF96 !important;
+            border-radius: 50px !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,.3) !important;
+            transition: all 400ms cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+            transform: rotate(-45deg) !important;
+        }
+
+        .crater {
+            position: absolute !important;
+            background-color: #E8CDA5 !important;
+            opacity: 0 !important;
+            transition: opacity 200ms ease-in-out !important;
+            border-radius: 100% !important;
+        }
+
+        .crater--1 {
+            top: 9px !important;
+            left: 5px !important;
+            width: 2px !important;
+            height: 2px !important;
+        }
+
+        .crater--2 {
+            top: 14px !important;
+            left: 11px !important;
+            width: 3px !important;
+            height: 3px !important;
+        }
+
+        .crater--3 {
+            top: 5px !important;
+            left: 12px !important;
+            width: 4px !important;
+            height: 4px !important;
+        }
+
+        .star {
+            position: absolute !important;
+            background-color: #ffffff !important;
+            transition: all 300ms cubic-bezier(0.445, 0.05, 0.55, 0.95) !important;
+            border-radius: 50% !important;
+        }
+
+        .star--1 {
+            top: 5px !important;
+            left: 17px !important;
+            z-index: 0 !important;
+            width: 15px !important;
+            height: 2px !important;
+        }
+
+        .star--2 {
+            top: 9px !important;
+            left: 14px !important;
+            z-index: 1 !important;
+            width: 15px !important;
+            height: 2px !important;
+        }
+
+        .star--3 {
+            top: 14px !important;
+            left: 20px !important;
+            z-index: 0 !important;
+            width: 15px !important;
+            height: 2px !important;
+        }
+
+        .star--4,
+        .star--5,
+        .star--6 {
+            opacity: 0 !important;
+            transition: all 300ms 0 cubic-bezier(0.445, 0.05, 0.55, 0.95) !important;
+        }
+
+        .star--4 {
+            top: 8px !important;
+            left: 6px !important;
+            z-index: 0 !important;
+            width: 1px !important;
+            height: 1px !important;
+            transform: translate3d(3px,0,0) !important;
+        }
+
+        .star--5 {
+            top: 16px !important;
+            left: 9px !important;
+            z-index: 0 !important;
+            width: 1.5px !important;
+            height: 1.5px !important;
+            transform: translate3d(3px,0,0) !important;
+        }
+
+        .star--6 {
+            top: 18px !important;
+            left: 14px !important;
+            z-index: 0 !important;
+            width: 1px !important;
+            height: 1px !important;
+            transform: translate3d(3px,0,0) !important;
+        }
+
+        /* Night mode - Checked state styles */
+        input:checked + .toggle {
+            background-color: #749DD6 !important;
+        }
+
+        input:checked + .toggle .toggle__handler {
+            background-color: #FFE5B5 !important;
+            transform: translate3d(20px, 0, 0) rotate(0deg) !important;
+        }
+
+        input:checked + .toggle .crater {
+            opacity: 1 !important;
+        }
+
+        input:checked + .toggle .star--1 {
+            width: 1px !important;
+            height: 1px !important;
+        }
+
+        input:checked + .toggle .star--2 {
+            width: 2px !important;
+            height: 2px !important;
+            transform: translate3d(-5px, 0, 0) !important;
+        }
+
+        input:checked + .toggle .star--3 {
+            width: 1px !important;
+            height: 1px !important;
+            transform: translate3d(-7px, 0, 0) !important;
+        }
+
+        input:checked + .toggle .star--4,
+        input:checked + .toggle .star--5,
+        input:checked + .toggle .star--6 {
+            opacity: 1 !important;
+            transform: translate3d(0,0,0) !important;
+        }
+
+        input:checked + .toggle .star--4 {
+            transition: all 300ms 200ms cubic-bezier(0.445, 0.05, 0.55, 0.95) !important;
+        }
+
+        input:checked + .toggle .star--5 {
+            transition: all 300ms 300ms cubic-bezier(0.445, 0.05, 0.55, 0.95) !important;
+        }
+
+        input:checked + .toggle .star--6 {
+            transition: all 300ms 400ms cubic-bezier(0.445, 0.05, 0.55, 0.95) !important;
+        }
+        
+        /* Progress Bar Enhancement */
+        .progress-bar {
+            background: linear-gradient(90deg, #ea580c, #dc2626);
+            transition: width 0.3s ease;
+        }
+
+        /* Enhanced File Preview Grid */
+        .image-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .image-preview-item {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff !important;
+            border: 2px solid #e5e7eb !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .image-preview-item {
+            background: #ffffff !important;
+            border-color: #d1d5db !important;
+        }
+
+        .image-preview-item img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .image-preview-item .file-name {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 12px;
+            font-size: 13px;
+            line-height: 1.4;
+            word-break: break-word;
+            text-align: center;
+            max-height: 50%;
+            overflow-y: auto;
+            backdrop-filter: blur(4px);
+        }
+        
+        .image-preview-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .dark .image-preview-item:hover {
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Mobile Responsive Improvements */
+        @media (max-width: 768px) {
+            .flex.space-x-4 {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .flex.space-x-4 > * {
+                margin-left: 0 !important;
+            }
+            
+            .image-preview-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 8px;
+            }
+            
+            .image-preview-item {
+                width: 120px;
+                height: 120px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .image-preview-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+            
+            .image-preview-item {
+                width: 100px;
+                height: 100px;
+            }
+        }
+    </style>
+</head>
+<body class="theme-transition bg-slate-50 dark:bg-gray-900 text-slate-800 dark:text-gray-100 min-h-screen">
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+    
+    <!-- Progress Bar -->
+    <div id="progress-container" class="fixed top-0 left-0 w-full h-1 z-40 hidden">
+        <div id="progress-bar" class="h-full progress-bar" style="width: 0%"></div>
+    </div>
+    
+    <!-- Navigation -->
+    <nav class="glass-effect sticky top-0 z-30 backdrop-blur-lg" role="navigation" aria-label="Main navigation">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <a href="../index.html" class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg" aria-hidden="true">
+                            <div class="relative">
+                                <svg class="w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z M8.5 12.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
+                                <svg class="w-4 h-4 text-blue-200 absolute -top-1 -right-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z M8.5 12.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
+                            </div>
+                        </div>
+                        <div class="flex flex-col">
+                            <h1 class="text-xl font-bold text-gray-900 dark:text-white">ImagePDF Toolkit</h1>
+                            <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Image Resizer</span>
+                        </div>
+                    </a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- Theme Toggle -->
+                    <div class="toggleWrapper">
+                        <input type="checkbox" id="dn" aria-label="Toggle dark mode" />
+                        <label for="dn" class="toggle" aria-label="Dark mode toggle">
+                            <span class="toggle__handler" aria-hidden="true">
+                                <span class="crater crater--1"></span>
+                                <span class="crater crater--2"></span>
+                                <span class="crater crater--3"></span>
+                            </span>
+                            <span class="star star--1" aria-hidden="true"></span>
+                            <span class="star star--2" aria-hidden="true"></span>
+                            <span class="star star--3" aria-hidden="true"></span>
+                            <span class="star star--4" aria-hidden="true"></span>
+                            <span class="star star--5" aria-hidden="true"></span>
+                            <span class="star star--6" aria-hidden="true"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Hero Section -->
+        <section class="text-center mb-12">
+            <div class="inline-flex items-center justify-center w-20 h-20 tool-gradient rounded-2xl shadow-lg mb-6">
+                <svg class="w-10 h-10 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 3h6v2H5v4H3V3m2 16h4v2H3v-6h2v4m16 0v-4h2v6h-6v-2h4M19 3v2h-4V3h6v6h-2V5"/>
+                </svg>
+            </div>
+            <h1 class="text-4xl font-bold mb-4 text-slate-900 dark:text-white">Image Resizer</h1>
+            <p class="text-xl text-slate-600 dark:text-gray-300 mb-8">
+                Resize images to custom dimensions with precision and quality control
+            </p>
+        </section>
+        
+        <!-- Tool Interface -->
+        <section class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
+            <div class="mb-8">
+                <!-- File Upload Zone -->
+                <div class="file-drop-zone rounded-xl p-8 text-center mb-6" id="drop-zone">
+                    <div class="max-w-md mx-auto">
+                        <div class="w-20 h-20 bg-gradient-to-br from-orange-100 to-red-100 dark:from-orange-900 dark:to-red-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-10 h-10 text-orange-600 dark:text-orange-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5-7l-3 3.72L9 13l-3 4h12l-4-5z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                            Drop images here
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">
+                            or click to browse files
+                        </p>
+                        <input type="file" id="file-input" multiple accept="image/*" class="hidden">
+                        <button onclick="document.getElementById('file-input').click()" class="btn-base btn-secondary btn-lg">
+                            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5-7l-3 3.72L9 13l-3 4h12l-4-5z"/>
+                            </svg>
+                            Choose Images
+                        </button>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-4">
+                            Supports JPG, PNG, WebP, AVIF and more formats
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Resize Controls -->
+                <div class="grid md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Width (px)</label>
+                        <input type="number" id="resize-width" placeholder="800" class="dimension-input w-full p-3 border dark:border-gray-600 rounded-lg dark:bg-gray-700">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Height (px)</label>
+                        <input type="number" id="resize-height" placeholder="600" class="dimension-input w-full p-3 border dark:border-gray-600 rounded-lg dark:bg-gray-700">
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="maintain-aspect" checked class="mr-2">
+                        <span class="text-sm">Maintain aspect ratio</span>
+                    </label>
+                </div>
+                
+                <!-- File Preview -->
+                <div id="file-preview" class="hidden mb-6">
+                    <h3 class="text-lg font-semibold mb-4">Selected Files</h3>
+                    <div id="file-list" class="space-y-2 mb-4"></div>
+                    <div id="image-preview-grid" class="image-preview-grid"></div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex space-x-4">
+                    <button id="process-btn" class="btn-base btn-primary btn-lg flex-1" disabled>
+                        <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 3h6v2H5v4H3V3m2 16h4v2H3v-6h2v4m16 0v-4h2v6h-6v-2h4M19 3v2h-4V3h6v6h-2V5"/>
+                        </svg>
+                        Resize Images
+                    </button>
+                    <button id="download-btn" class="btn-base btn-success btn-lg flex-1 hidden" disabled>
+                        <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                        </svg>
+                        Download All
+                    </button>
+                </div>
+                
+                <!-- Results -->
+                <div id="results" class="mt-6 hidden">
+                    <h3 class="text-lg font-semibold mb-4">Resized Images</h3>
+                    <div id="results-list" class="space-y-2"></div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Features Section -->
+        <section class="grid md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+                <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center mb-4">
+                    <svg class="w-6 h-6 text-orange-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Batch Processing</h3>
+                <p class="text-gray-600 dark:text-gray-300">Resize multiple images simultaneously to the same dimensions.</p>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+                <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center mb-4">
+                    <svg class="w-6 h-6 text-orange-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10S2 17.514 2 12 6.486 2 12 2zm0 18c4.411 0 8-3.589 8-8s-3.589-8-8-8-8 3.589-8 8 3.589 8 8 8z"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Aspect Ratio Control</h3>
+                <p class="text-gray-600 dark:text-gray-300">Choose to maintain aspect ratio or stretch to exact dimensions.</p>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+                <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center mb-4">
+                    <svg class="w-6 h-6 text-orange-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-white">High Quality</h3>
+                <p class="text-gray-600 dark:text-gray-300">Professional resizing algorithms maintain image quality at any size.</p>
+            </div>
+        </section>
+        
+        <!-- Instructions -->
+        <section class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+            <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">How to Use</h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Simple Steps</h3>
+                    <ol class="list-decimal list-inside space-y-2 text-gray-600 dark:text-gray-300">
+                        <li>Select or drag and drop your images</li>
+                        <li>Enter desired width and height dimensions</li>
+                        <li>Choose whether to maintain aspect ratio</li>
+                        <li>Click "Resize Images" to process</li>
+                        <li>Download your resized images</li>
+                    </ol>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Tips</h3>
+                    <ul class="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-300">
+                        <li>Leave one dimension empty for proportional scaling</li>
+                        <li>Uncheck aspect ratio for exact dimensions</li>
+                        <li>Common sizes: 1920x1080, 800x600, 300x200</li>
+                        <li>Supports all common image formats</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- Back to Tools Button -->
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
+        <a href="../index.html#tools" class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" aria-label="Back to tools section">
+            <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+            Back to Tools
+        </a>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12" role="contentinfo" aria-label="Site footer">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg" aria-hidden="true">
+                            <div class="relative">
+                                <svg class="w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z M8.5 12.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
+                                <svg class="w-4 h-4 text-blue-200 absolute -top-1 -right-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z M8.5 12.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
+                            </div>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-xl font-bold text-white">ImagePDF Toolkit</span>
+                            <span class="text-xs text-gray-400 font-medium">Professional Tools</span>
+                        </div>
+                    </div>
+                    <p class="text-gray-400">Professional image and PDF processing tools for modern workflows.</p>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Tools</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="image-to-pdf.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Image to PDF</a></li>
+                        <li><a href="pdf-to-images.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">PDF to Images</a></li>
+                        <li><a href="image-compressor.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Image Compressor</a></li>
+                        <li><a href="image-resizer.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Image Resizer</a></li>
+                        <li><a href="format-converter.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Format Converter</a></li>
+                        <li><a href="batch-processor.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Batch Processor</a></li>
+                        <li><a href="pdf-to-doc.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">PDF to DOC</a></li>
+                        <li><a href="qr-generator.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">QR Code Generator</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Company</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="../about.html" class="hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="../privacy.html" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                        <li><a href="../terms.html" class="hover:text-white transition-colors">Terms of Service</a></li>
+                        <li><a href="../contact.html" class="hover:text-white transition-colors">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Connect</h4>
+                    <div class="flex space-x-4">
+               <a href="https://github.com/techuhat" class="text-gray-400 hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">
+                            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+                        </a>
+                        <a href="https://www.linkedin.com/in/mohdkhanumar/" class="text-gray-400 hover:text-white transition-colors">
+                            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M100.28 448H7.4V148.9h92.88zM53.79 108.1C24.09 108.1 0 83.5 0 53.8a53.79 53.79 0 0 1 107.58 0c0 29.7-24.1 54.3-53.79 54.3zM447.9 448h-92.68V302.4c0-34.7-.7-79.2-48.29-79.2-48.29 0-55.69 37.7-55.69 76.7V448h-92.78V148.9h89.08v40.8h1.3c12.4-23.5 42.69-48.3 87.88-48.3 94 0 111.28 61.9 111.28 142.3V448z"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 ImagePDF Toolkit. All rights reserved. Design by Tech U ❤️</p>
+            </div>
+        </div>
+    </footer>
+    
+    <script src="../script.js"></script>
+    <script>
+        // Global variables for file handling
+        let currentFiles = [];
+        let processedFiles = [];
+        let currentTool = 'image-resizer';
+        
+        // Initialize tool with image-resizer functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Initializing image-resizer tool...');
+            
+            // Set current tool for the script
+            currentTool = 'image-resizer';
+            
+            // Initialize file handling
+            setupFileHandling();
+            setupImageResizer();
+            
+            // Setup theme toggle
+            const themeToggle = document.getElementById('dn');
+            if (themeToggle) {
+                const isDark = document.documentElement.classList.contains('dark');
+                themeToggle.checked = isDark;
+                themeToggle.addEventListener('change', () => {
+                    const theme = themeToggle.checked ? 'dark' : 'light';
+                    localStorage.setItem('theme', theme);
+                    document.documentElement.classList.toggle('dark', themeToggle.checked);
+                });
+            }
+            
+            // Show success message
+            setTimeout(() => UnifiedToastSystem.show('Image Resizer tool loaded successfully!', 'success'), 500);
+        });
+        
+        // Setup file handling
+        function setupFileHandling() {
+            const fileInput = document.getElementById('file-input');
+            const dropZone = document.getElementById('drop-zone');
+            
+            if (fileInput) {
+                fileInput.addEventListener('change', function(e) {
+                    const files = Array.from(e.target.files);
+                    if (files.length > 0) {
+                        handleFiles(files);
+                    }
+                });
+            }
+            
+            if (dropZone) {
+                dropZone.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    dropZone.classList.add('drag-over');
+                });
+                
+                dropZone.addEventListener('dragleave', function(e) {
+                    e.preventDefault();
+                    dropZone.classList.remove('drag-over');
+                });
+                
+                dropZone.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    dropZone.classList.remove('drag-over');
+                    const files = Array.from(e.dataTransfer.files);
+                    if (files.length > 0) {
+                        handleFiles(files);
+                    }
+                });
+            }
+        }
+        
+        // Handle files function
+        function handleFiles(files) {
+            // Filter for image files only
+            const imageFiles = files.filter(file => file.type.startsWith('image/'));
+            if (imageFiles.length === 0) {
+                UnifiedToastSystem.show('Please select valid image files', 'error');
+                return;
+            }
+            
+            currentFiles = imageFiles;
+            updateFileList(imageFiles);
+            
+            // Enable process button
+            const processBtn = document.getElementById('process-btn');
+            if (processBtn) {
+                processBtn.disabled = false;
+            }
+        }
+        
+        // Update file list display
+        function updateFileList(files) {
+            const filePreview = document.getElementById('file-preview');
+            const fileList = document.getElementById('file-list');
+            const imagePreviewGrid = document.getElementById('image-preview-grid');
+            
+            if (files.length > 0) {
+                filePreview.classList.remove('hidden');
+                fileList.innerHTML = '';
+                imagePreviewGrid.innerHTML = '';
+                
+                files.forEach((file, index) => {
+                    // Add to file list
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600';
+                    
+                    fileItem.innerHTML = `
+                        <div class="flex items-center flex-1 min-w-0">
+                            <svg class="w-5 h-5 text-green-600 mr-3 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5-7l-3 3.72L9 13l-3 4h12l-4-5z"/>
+                            </svg>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900 dark:text-white truncate">${file.name}</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">${formatFileSize(file.size)}</p>
+                            </div>
+                        </div>
+                        <button onclick="removeFile(${index})" class="flex-shrink-0 ml-4 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200">
+                            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41z"/>
+                            </svg>
+                        </button>
+                    `;
+                    
+                    fileList.appendChild(fileItem);
+                    
+                    // Add to image preview grid
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'image-preview-item';
+                    
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    img.alt = file.name;
+                    img.onload = () => URL.revokeObjectURL(img.src);
+                    
+                    const fileName = document.createElement('div');
+                    fileName.className = 'file-name';
+                    fileName.textContent = file.name;
+                    
+                    previewItem.appendChild(img);
+                    previewItem.appendChild(fileName);
+                    imagePreviewGrid.appendChild(previewItem);
+                });
+            } else {
+                filePreview.classList.add('hidden');
+            }
+        }
+        
+        // Remove file function
+        function removeFile(index) {
+            currentFiles.splice(index, 1);
+            updateFileList(currentFiles);
+            
+            if (currentFiles.length === 0) {
+                const processBtn = document.getElementById('process-btn');
+                if (processBtn) {
+                    processBtn.disabled = true;
+                }
+            }
+        }
+        
+        // Format file size helper
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // Progress functions
+        function showProgress(show, message = '') {
+            const progressContainer = document.getElementById('progress-container');
+            if (progressContainer) {
+                if (show) {
+                    progressContainer.classList.remove('hidden');
+                } else {
+                    progressContainer.classList.add('hidden');
+                }
+            }
+        }
+        
+        function updateProgress(percent, message = '') {
+            const progressBar = document.getElementById('progress-bar');
+            if (progressBar) {
+                progressBar.style.width = percent + '%';
+            }
+        }
+        
+        // Toast system handled by UnifiedToastSystem
+        
+        function showProcessingStartToast(toolName) {
+            showToast(`���� Starting ${toolName} processing...`, 'info', 2000);
+        }
+        
+        function showProcessingCompleteToast(toolName, count) {
+            showToast(`✅ ${toolName} completed! Processed ${count} files.`, 'success', 3000);
+        }
+        
+        function showErrorToast(toolName, error) {
+            showToast(`❌ ${toolName} error: ${error}`, 'error', 5000);
+        }
+        
+        // Resize image function
+        async function resizeImageFile(file, width, height, maintainAspect = true) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    let newWidth = width;
+                    let newHeight = height;
+                    
+                    if (maintainAspect) {
+                        const aspectRatio = img.width / img.height;
+                        if (width && !height) {
+                            newHeight = Math.round(width / aspectRatio);
+                        } else if (height && !width) {
+                            newWidth = Math.round(height * aspectRatio);
+                        } else if (width && height) {
+                            // Use width as primary, calculate height
+                            newHeight = Math.round(width / aspectRatio);
+                        }
+                    }
+                    
+                    canvas.width = newWidth;
+                    canvas.height = newHeight;
+                    
+                    ctx.drawImage(img, 0, 0, newWidth, newHeight);
+                    
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            resolve(blob);
+                        } else {
+                            reject(new Error('Failed to resize image'));
+                        }
+                    }, file.type, 0.9);
+                };
+                
+                img.onerror = () => reject(new Error('Failed to load image'));
+                img.src = URL.createObjectURL(file);
+            });
+        }
+        
+        // Download all files function
+        function downloadAllFiles() {
+            if (processedFiles.length === 0) {
+                showToast('No files to download', 'warning');
+                return;
+            }
+            
+            if (processedFiles.length === 1) {
+                // Download single file directly
+                const file = processedFiles[0];
+                const url = URL.createObjectURL(file);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = file.name;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } else {
+                // For multiple files, download each one
+                processedFiles.forEach((file, index) => {
+                    setTimeout(() => {
+                        const url = URL.createObjectURL(file);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = file.name;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }, index * 100); // Small delay between downloads
+                });
+            }
+            
+            showToast(`Downloaded ${processedFiles.length} files`, 'success');
+        }
+        
+        // Initialize the image resizer
+        function setupImageResizer() {
+            // Get UI elements
+            const widthInput = document.getElementById('resize-width');
+            const heightInput = document.getElementById('resize-height');
+            const aspectRatioToggle = document.getElementById('maintain-aspect');
+            const processBtn = document.getElementById('process-btn');
+            const downloadBtn = document.getElementById('download-btn');
+            
+            // Setup aspect ratio toggle
+            if (aspectRatioToggle) {
+                aspectRatioToggle.addEventListener('change', function() {
+                    if (this.checked) {
+                        heightInput.disabled = true;
+                        heightInput.value = '';
+                    } else {
+                        heightInput.disabled = false;
+                    }
+                });
+            }
+            
+            // Setup width input to maintain aspect ratio
+            if (widthInput && heightInput && aspectRatioToggle) {
+                widthInput.addEventListener('input', function() {
+                    if (aspectRatioToggle.checked && currentFiles.length > 0) {
+                        const file = currentFiles[0];
+                        const img = new Image();
+                        img.onload = function() {
+                            const aspectRatio = img.height / img.width;
+                            const newHeight = Math.round(parseInt(widthInput.value) * aspectRatio);
+                            heightInput.value = newHeight;
+                        };
+                        img.src = URL.createObjectURL(file);
+                    }
+                });
+            }
+            
+            // Setup process button
+            if (processBtn) {
+                processBtn.addEventListener('click', async () => {
+                    if (currentFiles.length === 0) {
+                        showToast('Please select files first', 'error');
+                        return;
+                    }
+                
+                    const width = parseInt(widthInput ? widthInput.value : 800);
+                    const height = parseInt(heightInput ? heightInput.value : 600);
+                    const maintainAspect = aspectRatioToggle ? aspectRatioToggle.checked : true;
+                    
+                    if (!width || width <= 0) {
+                        showToast('❌ Please enter a valid width', 'error', 3000);
+                        return;
+                    }
+                    
+                    if (!maintainAspect && (!height || height <= 0)) {
+                        showToast('❌ Please enter a valid height', 'error', 3000);
+                        return;
+                    }
+                    
+                    processBtn.disabled = true;
+                    processBtn.innerHTML = '<svg class="w-5 h-5 animate-spin mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 1 10 10h-2a8 8 0 0 0-8-8V2z"/></svg>Processing...';
+                    
+                    showProgress(true, 'Resizing images...');
+                    UnifiedToastSystem.show('🔄 Starting Image Resizer processing...', 'info', 2000);
+                    
+                    processedFiles = [];
+                    
+                    try {
+                        for (let i = 0; i < currentFiles.length; i++) {
+                            const file = currentFiles[i];
+                            const progress = (i / currentFiles.length) * 100;
+                            updateProgress(progress, 'Resizing ' + file.name + '...');
+                            
+                            const resizedBlob = await resizeImageFile(file, width, height, maintainAspect);
+                            const processedFile = new File([resizedBlob], file.name, { type: file.type });
+                            processedFiles.push(processedFile);
+                        }
+                        
+                        updateProgress(100, 'Resizing complete!');
+                        UnifiedToastSystem.show(`✅ Image Resizer completed! Processed ${processedFiles.length} files.`, 'success', 3000);
+                        showResults();
+                        
+                    } catch (error) {
+                        console.error('Resizing error:', error);
+                        UnifiedToastSystem.show(`❌ Image Resizer error: ${error.message}`, 'error', 5000);
+                    } finally {
+                        setTimeout(() => showProgress(false), 1000);
+                        
+                        processBtn.disabled = false;
+                        processBtn.innerHTML = '<svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h6v2H5v4H3V3m2 16h4v2H3v-6h2v4m16 0v-4h2v6h-6v-2h4M19 3v2h-4V3h6v6h-2V5"/></svg>Resize Images';
+                    }
+                });
+            }
+            
+            // Setup download button
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', downloadAllFiles);
+            }
+        }
+        
+        // Helper function to show results
+        function showResults() {
+            const results = document.getElementById('results');
+            const resultsList = document.getElementById('results-list');
+            const downloadBtn = document.getElementById('download-btn');
+            
+            // Show the main download button
+            if (downloadBtn) {
+                downloadBtn.classList.remove('hidden');
+                downloadBtn.disabled = false;
+            }
+            
+            if (results && resultsList) {
+                results.classList.remove('hidden');
+                resultsList.innerHTML = '';
+                
+                processedFiles.forEach((file, index) => {
+                    const resultItem = document.createElement('div');
+                    resultItem.className = 'flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-3 rounded-lg mb-2';
+                    
+                    const icon = document.createElement('svg');
+                    icon.className = 'w-5 h-5 text-green-600 mr-3';
+                    icon.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                    icon.setAttribute('viewBox', '0 0 24 24');
+                    icon.setAttribute('fill', 'currentColor');
+                    icon.innerHTML = '<path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5-7l-3 3.72L9 13l-3 4h12l-4-5z"/>';
+
+                    const fileInfo = document.createElement('div');
+                    fileInfo.className = 'flex flex-col';
+
+                    const fileName = document.createElement('div');
+                    fileName.className = 'font-medium text-gray-900 dark:text-white';
+                    fileName.textContent = file.name;
+
+                    const fileSize = document.createElement('div');
+                    fileSize.className = 'text-sm text-gray-500 dark:text-gray-400';
+                    fileSize.textContent = formatFileSize(file.size);
+
+                    fileInfo.appendChild(fileName);
+                    fileInfo.appendChild(fileSize);
+
+                    const container = document.createElement('div');
+                    container.className = 'flex items-center';
+                    container.appendChild(icon);
+                    container.appendChild(fileInfo);
+
+                    // Create download button
+                    const downloadButton = document.createElement('button');
+                    downloadButton.className = 'btn-base btn-primary btn-sm';
+                    downloadButton.onclick = () => downloadSingleFile(index);
+                    
+                    const downloadIcon = document.createElement('svg');
+                    downloadIcon.className = 'w-4 h-4 mr-1';
+                    downloadIcon.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                    downloadIcon.setAttribute('viewBox', '0 0 24 24');
+                    downloadIcon.setAttribute('fill', 'currentColor');
+                    downloadIcon.innerHTML = '<path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>';
+                    
+                    downloadButton.appendChild(downloadIcon);
+                    downloadButton.appendChild(document.createTextNode('Download'));
+
+                    // Assemble result item
+                    resultItem.appendChild(container);
+                    resultItem.appendChild(downloadButton);
+                    resultsList.appendChild(resultItem);
+                });
+            }
+        }
+
+        // Helper function to download single file
+        function downloadSingleFile(index) {
+            const file = processedFiles[index];
+            const url = URL.createObjectURL(file);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = file.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

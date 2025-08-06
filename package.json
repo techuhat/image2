@@ -1,0 +1,32 @@
+{
+  "name": "imagepdf-toolkit",
+  "version": "2.0.0",
+  "description": "Professional PDF and Image Processing Toolkit with Deta Space Backend",
+  "main": "index.html",
+  "scripts": {
+    "dev": "live-server --port=3000 --host=localhost",
+    "build": "echo 'Frontend build completed'",
+    "deploy": "echo 'Deploy to hosting platform'",
+    "backend:dev": "cd deta-backend && deta dev",
+    "backend:deploy": "cd deta-backend && deta deploy",
+    "test": "echo 'Tests not implemented yet'"
+  },
+  "keywords": [
+    "pdf",
+    "image",
+    "converter",
+    "toolkit",
+    "deta-space",
+    "serverless"
+  ],
+  "author": "ImagePDF Toolkit Team",
+  "license": "MIT",
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/techuhat/toolkit"
+  },
+  "homepage": "https://techuhat.github.io/toolkit"
+}

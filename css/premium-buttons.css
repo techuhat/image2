@@ -1,0 +1,459 @@
+/* Premium Button Design System - ImagePDF Toolkit */
+/* Consistent, accessible, and premium-looking buttons for 95+ PageSpeed score */
+
+/* Base button styles */
+.btn-base {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    text-align: center;
+    text-decoration: none;
+    white-space: nowrap;
+    vertical-align: middle;
+    user-select: none;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transform: translateZ(0);
+    will-change: transform, box-shadow;
+}
+
+.btn-base:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.3);
+}
+
+.btn-base:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Button sizes */
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 0.875rem;
+    border-radius: 8px;
+}
+
+.btn-md {
+    padding: 12px 24px;
+    font-size: 0.95rem;
+}
+
+.btn-lg {
+    padding: 16px 32px;
+    font-size: 1.1rem;
+    border-radius: 14px;
+}
+
+.btn-xl {
+    padding: 20px 40px;
+    font-size: 1.2rem;
+    border-radius: 16px;
+}
+
+/* Primary Button - Professional Blue */
+.btn-primary {
+    background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+    color: white;
+    box-shadow: 
+        0 6px 20px 0 rgba(49, 130, 206, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2c5282 0%, #2a4d8f 100%);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 
+        0 12px 30px 0 rgba(49, 130, 206, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+}
+
+.btn-primary:hover::before {
+    left: 100%;
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(-1px) scale(1.01);
+    box-shadow: 
+        0 4px 15px 0 rgba(49, 130, 206, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+}
+
+/* Secondary Button - Professional Gray */
+.btn-secondary {
+    background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+    color: #4a5568;
+    border: 1px solid rgba(74, 85, 104, 0.25);
+    box-shadow: 
+        0 3px 12px 0 rgba(0, 0, 0, 0.08),
+        0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-secondary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(74, 85, 104, 0.1), transparent);
+    transition: left 0.6s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    color: #2d3748;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 
+        0 6px 20px 0 rgba(0, 0, 0, 0.12),
+        0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+    border-color: rgba(74, 85, 104, 0.35);
+}
+
+.btn-secondary:hover::before {
+    left: 100%;
+}
+
+/* Dark mode secondary button */
+.dark .btn-secondary {
+    background: linear-gradient(135deg, var(--github-bg-tertiary) 0%, var(--github-bg-overlay) 100%);
+    color: var(--github-text-primary);
+    border: 1px solid var(--github-border-primary);
+    box-shadow: 
+        0 3px 12px 0 rgba(1, 4, 9, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+.dark .btn-secondary:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--github-bg-overlay) 0%, var(--github-border-primary) 100%);
+    color: var(--github-text-primary);
+    border-color: var(--github-border-secondary);
+    box-shadow: 
+        0 6px 20px 0 rgba(1, 4, 9, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+/* Dark mode primary button */
+.dark .btn-primary {
+    background: linear-gradient(135deg, var(--github-accent-emphasis) 0%, var(--github-accent-fg) 100%);
+    color: var(--github-text-primary);
+    border: 1px solid var(--github-accent-emphasis);
+    box-shadow: 
+        0 4px 14px 0 rgba(31, 111, 235, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+.dark .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--github-accent-fg) 0%, var(--github-accent-emphasis) 100%);
+    border-color: var(--github-accent-fg);
+    box-shadow: 
+        0 8px 25px 0 rgba(31, 111, 235, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+/* Dark mode success button */
+.dark .btn-success {
+    background: linear-gradient(135deg, var(--github-success-emphasis) 0%, var(--github-success-fg) 100%);
+    color: var(--github-text-primary);
+    border: 1px solid var(--github-success-emphasis);
+    box-shadow: 
+        0 4px 14px 0 rgba(35, 134, 54, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+.dark .btn-success:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--github-success-fg) 0%, var(--github-success-emphasis) 100%);
+    border-color: var(--github-success-fg);
+    box-shadow: 
+        0 8px 25px 0 rgba(35, 134, 54, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+/* Dark mode danger button */
+.dark .btn-danger {
+    background: linear-gradient(135deg, var(--github-danger-emphasis) 0%, var(--github-danger-fg) 100%);
+    color: var(--github-text-primary);
+    border: 1px solid var(--github-danger-emphasis);
+    box-shadow: 
+        0 4px 14px 0 rgba(218, 54, 51, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+.dark .btn-danger:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--github-danger-fg) 0%, var(--github-danger-emphasis) 100%);
+    border-color: var(--github-danger-fg);
+    box-shadow: 
+        0 8px 25px 0 rgba(218, 54, 51, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+/* Dark mode warning button */
+.dark .btn-warning {
+    background: linear-gradient(135deg, var(--github-attention-emphasis) 0%, var(--github-attention-fg) 100%);
+    color: var(--github-text-primary);
+    border: 1px solid var(--github-attention-emphasis);
+    box-shadow: 
+        0 4px 14px 0 rgba(158, 106, 3, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+.dark .btn-warning:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--github-attention-fg) 0%, var(--github-attention-emphasis) 100%);
+    border-color: var(--github-attention-fg);
+    box-shadow: 
+        0 8px 25px 0 rgba(158, 106, 3, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+/* Dark mode premium button */
+.dark .btn-premium {
+    background: linear-gradient(135deg, var(--github-done-emphasis) 0%, var(--github-done-fg) 100%);
+    color: var(--github-text-primary);
+    border: 1px solid var(--github-done-emphasis);
+    box-shadow: 
+        0 8px 25px 0 rgba(137, 87, 229, 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+.dark .btn-premium:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--github-done-fg) 0%, var(--github-done-emphasis) 100%);
+    border-color: var(--github-done-fg);
+    box-shadow: 
+        0 12px 35px 0 rgba(137, 87, 229, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+/* Success Button - Positive actions */
+.btn-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    box-shadow: 
+        0 4px 14px 0 rgba(16, 185, 129, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.btn-success:hover:not(:disabled) {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: translateY(-2px);
+    box-shadow: 
+        0 8px 25px 0 rgba(16, 185, 129, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+}
+
+/* Danger Button - Destructive actions */
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    box-shadow: 
+        0 4px 14px 0 rgba(239, 68, 68, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    transform: translateY(-2px);
+    box-shadow: 
+        0 8px 25px 0 rgba(239, 68, 68, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+}
+
+/* Warning Button - Caution actions */
+.btn-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    box-shadow: 
+        0 4px 14px 0 rgba(245, 158, 11, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.btn-warning:hover:not(:disabled) {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    transform: translateY(-2px);
+    box-shadow: 
+        0 8px 25px 0 rgba(245, 158, 11, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+}
+
+/* Special Premium Button - Ultimate Professional */
+.btn-premium {
+    background: linear-gradient(135deg, #805ad5 0%, #553c9a 100%);
+    color: white;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 
+        0 8px 25px 0 rgba(128, 90, 213, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.15) inset,
+        0 1px 0 0 rgba(255, 255, 255, 0.2) inset;
+    border: 1px solid rgba(128, 90, 213, 0.3);
+}
+
+.btn-premium::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    transform: rotate(45deg);
+    transition: all 0.8s ease;
+    opacity: 0;
+}
+
+.btn-premium:hover:not(:disabled)::before {
+    animation: shimmer 0.8s ease-in-out;
+    opacity: 1;
+}
+
+.btn-premium:hover:not(:disabled) {
+    background: linear-gradient(135deg, #6b46c1 0%, #4c1d95 100%);
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 
+        0 15px 40px 0 rgba(128, 90, 213, 0.6),
+        0 0 0 1px rgba(255, 255, 255, 0.2) inset,
+        0 1px 0 0 rgba(255, 255, 255, 0.3) inset;
+    border-color: rgba(128, 90, 213, 0.5);
+}
+
+.btn-premium:active:not(:disabled) {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 
+        0 8px 20px 0 rgba(128, 90, 213, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+}
+
+/* Button with icon spacing */
+.btn-base svg {
+    width: 1.25em;
+    height: 1.25em;
+}
+
+.btn-base svg:not(:last-child) {
+    margin-right: 0.5rem;
+}
+
+.btn-base svg:not(:first-child) {
+    margin-left: 0.5rem;
+}
+
+/* Loading state */
+.btn-loading {
+    color: transparent !important;
+    position: relative;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 1.2rem;
+    height: 1.2rem;
+    margin-left: -0.6rem;
+    margin-top: -0.6rem;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Animations */
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%) translateY(-100%) rotate(45deg);
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(100%) translateY(100%) rotate(45deg);
+        opacity: 0;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Button groups */
+.btn-group {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.btn-group.btn-group-full {
+    width: 100%;
+}
+
+.btn-group.btn-group-full .btn-base {
+    flex: 1;
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+    .btn-lg {
+        padding: 14px 28px;
+        font-size: 1rem;
+    }
+    
+    .btn-xl {
+        padding: 16px 32px;
+        font-size: 1.1rem;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .btn-group .btn-base {
+        width: 100%;
+    }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+    .btn-base {
+        transition: none;
+    }
+    
+    .btn-premium::before {
+        display: none;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .btn-base {
+        border: 2px solid currentColor;
+    }
+}
