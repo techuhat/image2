@@ -1,5 +1,6 @@
 fastapi
 uvicorn[standard]
+gunicorn
 python-multipart
 pdf2docx
 aiofiles
