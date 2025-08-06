@@ -10,6 +10,171 @@
 // currentFiles, processedFiles, currentTool, currentSlideIndex, imageDataUrls
 
 // ================================================================================
+// [Start] API CONFIGURATION
+// ================================================================================
+
+// API Configuration for Backend Integration
+const API_CONFIG = {
+    // Replace with your actual Render API URL
+    BASE_URL: 'https://image2-2-vnzx.onrender.com', // Updated with your actual URL
+    ENDPOINTS: {
+        HEALTH: '/health',
+        CAPABILITIES: '/capabilities',
+        PDF_TO_DOCX: '/convert',
+        DOCX_TO_PDF: '/docx-to-pdf',
+        COMPRESS_PDF: '/compress-pdf',
+        COMPRESS_IMAGE: '/compress'
+    }
+};
+
+// ================================================================================
+// [End] API CONFIGURATION
+// ================================================================================
+
+// ================================================================================
+// [Start] API HELPER FUNCTIONS
+// ================================================================================
+
+// API Helper Functions for Backend Integration
+const APIHelper = {
+    // Test API connection
+    async testConnection() {
+        try {
+            const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.HEALTH}`);
+            const data = await response.json();
+            console.log('API Connection Test:', data);
+            return data.status === 'healthy';
+        } catch (error) {
+            console.error('API Connection Failed:', error);
+            return false;
+        }
+    },
+
+    // Compress image using backend
+    async compressImage(file, options = {}) {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            // Add compression options
+            if (options.quality) formData.append('quality', options.quality);
+            if (options.max_width) formData.append('max_width', options.max_width);
+            if (options.max_height) formData.append('max_height', options.max_height);
+            if (options.format) formData.append('format', options.format);
+
+            const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.COMPRESS_IMAGE}`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            const filename = response.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 'compressed.jpg';
+            
+            return {
+                blob,
+                filename,
+                originalSize: response.headers.get('X-Original-Size'),
+                compressedSize: response.headers.get('X-Compressed-Size'),
+                compressionRatio: response.headers.get('X-Compression-Ratio')
+            };
+        } catch (error) {
+            console.error('Image compression failed:', error);
+            throw error;
+        }
+    },
+
+    // Convert PDF to DOCX
+    async convertPdfToDocx(file) {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.PDF_TO_DOCX}`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            const filename = response.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 'converted.docx';
+            
+            return { blob, filename };
+        } catch (error) {
+            console.error('PDF to DOCX conversion failed:', error);
+            throw error;
+        }
+    },
+
+    // Convert DOCX to PDF
+    async convertDocxToPdf(file) {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.DOCX_TO_PDF}`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            const filename = response.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 'converted.pdf';
+            
+            return { blob, filename };
+        } catch (error) {
+            console.error('DOCX to PDF conversion failed:', error);
+            throw error;
+        }
+    },
+
+    // Compress PDF
+    async compressPdf(file, quality = 4) {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('quality', quality);
+
+            const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.COMPRESS_PDF}`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            const filename = response.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 'compressed.pdf';
+            
+            return {
+                blob,
+                filename,
+                originalSize: response.headers.get('X-Original-Size'),
+                compressedSize: response.headers.get('X-Compressed-Size'),
+                compressionRatio: response.headers.get('X-Compression-Ratio')
+            };
+        } catch (error) {
+            console.error('PDF compression failed:', error);
+            throw error;
+        }
+    }
+};
+
+// ================================================================================
+// [End] API HELPER FUNCTIONS
+// ================================================================================
+
+// ================================================================================
 // [Start] TOAST NOTIFICATION SYSTEM
 // ================================================================================
 
