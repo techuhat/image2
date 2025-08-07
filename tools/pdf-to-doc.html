@@ -606,7 +606,13 @@
         
         <!-- Conversion Mode Selection -->
         <div class="max-w-2xl mx-auto mb-8">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">Choose Conversion Method</h3>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Choose Conversion Method</h3>
+                <div id="backend-status" class="flex items-center text-sm">
+                    <div class="w-2 h-2 bg-yellow-400 rounded-full mr-2 animate-pulse"></div>
+                    <span class="text-gray-500 dark:text-gray-400">Checking server...</span>
+                </div>
+            </div>
             <div class="grid md:grid-cols-2 gap-4">
                 <!-- Client-side Mode -->
                 <div class="conversion-mode-card bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-blue-200 dark:border-blue-700 cursor-pointer transition-all hover:border-blue-400 dark:hover:border-blue-500" onclick="selectConversionMode('client')">
@@ -802,11 +808,11 @@
         let conversionMode = 'client'; // 'client' or 'server'
         
         // Configuration for different deployment modes
-        const DEPLOYMENT_MODE = 'RAILWAY'; // Options: 'CLIENT_ONLY', 'WITH_BACKEND', 'RAILWAY'
+        const DEPLOYMENT_MODE = 'WITH_BACKEND'; // Options: 'CLIENT_ONLY', 'WITH_BACKEND', 'RENDER'
         
         const BACKEND_CONFIG = {
-            // Railway Production URL (Replace with your actual URL after deployment)
-            baseUrl: 'https://your-app-name-production-xyz.up.railway.app', 
+            // Render Production URL (Replace with your actual URL after deployment)
+            baseUrl: 'https://toolkit2.onrender.com',
             
             // For local testing, temporarily use:
             // baseUrl: 'http://localhost:8000',
@@ -826,10 +832,198 @@
         initTheme();
         
         // Initialize file handling using standardized functions from script.js
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             setupFileInput();
             setupGlobalDragDrop();
+            
+            // Check backend availability on page load and auto-disable server mode if needed
+            if (conversionMode === 'server' || serverModeAvailable) {
+                updateBackendStatus('checking', 'Checking backend availability...');
+                
+                if (typeof updateProgress === 'function') {
+                    updateProgress(0, 'Checking backend availability...');
+                    showProgress(true);
+                }
+                
+                const healthCheck = await checkBackendAvailability();
+                
+                if (typeof showProgress === 'function') {
+                    showProgress(false);
+                }
+                
+                if (!healthCheck.available) {
+                    // Auto-switch to client mode
+                    conversionMode = 'client';
+                    serverModeAvailable = false;
+                    selectConversionMode('client');
+                    
+                    // Update status
+                    updateBackendStatus('unavailable', 'Server unavailable - Using client-side');
+                    
+                    // Disable server mode UI
+                    const serverModeCard = document.querySelector('[onclick="selectConversionMode(\'server\')"]');
+                    if (serverModeCard) {
+                        serverModeCard.style.opacity = '0.5';
+                        serverModeCard.style.pointerEvents = 'none';
+                        serverModeCard.title = 'Backend server not available';
+                        
+                        const serverRadio = document.getElementById('server-mode');
+                        if (serverRadio) {
+                            serverRadio.disabled = true;
+                        }
+                        
+                        // Add retry button
+                        const retryHtml = `
+                            <div class="text-center mt-4">
+                                <button onclick="retryBackendConnection()" class="btn-base btn-secondary btn-sm">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Retry Server Connection
+                                </button>
+                            </div>
+                        `;
+                        serverModeCard.insertAdjacentHTML('afterend', retryHtml);
+                    }
+                    
+                    // Show informative message
+                    if (healthCheck.reason === 'timeout') {
+                        UnifiedToastSystem.show('⚡ Server unavailable (timeout). Client-side mode selected for instant processing.', 'info', 6000);
+                    } else {
+                        UnifiedToastSystem.show('🔧 Backend server unavailable. Client-side mode provides instant, private processing.', 'info', 6000);
+                    }
+                } else {
+                    updateBackendStatus('available', 'Both modes available');
+                    UnifiedToastSystem.show('🌟 Both client-side and server-side processing available!', 'success', 4000);
+                }
+            } else {
+                updateBackendStatus('client-only', 'Client-side processing only');
+            }
         });
+        
+        // Backend availability check function
+        async function checkBackendAvailability() {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+                
+                const response = await fetch(`${BACKEND_CONFIG.baseUrl}/health`, {
+                    method: 'GET',
+                    signal: controller.signal,
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    return { 
+                        available: true, 
+                        data: data 
+                    };
+                } else {
+                    return { 
+                        available: false, 
+                        reason: 'http_error',
+                        status: response.status 
+                    };
+                }
+                
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    return { 
+                        available: false, 
+                        reason: 'timeout',
+                        error: error.message 
+                    };
+                } else {
+                    return { 
+                        available: false, 
+                        reason: 'network_error',
+                        error: error.message 
+                    };
+                }
+            }
+        }
+        
+        // Retry backend connection function
+        window.retryBackendConnection = async function() {
+            const retryButton = event.target;
+            const originalText = retryButton.innerHTML;
+            
+            updateBackendStatus('checking', 'Retrying connection...');
+            
+            retryButton.disabled = true;
+            retryButton.innerHTML = `
+                <svg class="w-4 h-4 animate-spin" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+                </svg>
+                Checking...
+            `;
+            
+            const healthCheck = await checkBackendAvailability();
+            
+            if (healthCheck.available) {
+                // Re-enable server mode
+                serverModeAvailable = true;
+                const serverModeCard = document.querySelector('[onclick="selectConversionMode(\'server\')"]');
+                const serverRadio = document.getElementById('server-mode');
+                
+                if (serverModeCard) {
+                    serverModeCard.style.opacity = '1';
+                    serverModeCard.style.pointerEvents = 'auto';
+                    serverModeCard.title = '';
+                }
+                
+                if (serverRadio) {
+                    serverRadio.disabled = false;
+                }
+                
+                // Remove retry button
+                retryButton.parentElement.remove();
+                
+                updateBackendStatus('available', 'Server reconnected');
+                UnifiedToastSystem.show('🎉 Backend server connection restored! Server-side processing now available.', 'success', 5000);
+                
+            } else {
+                retryButton.disabled = false;
+                retryButton.innerHTML = originalText;
+                
+                const reason = healthCheck.reason === 'timeout' ? 'Connection timeout' : 'Server unavailable';
+                updateBackendStatus('unavailable', reason);
+                UnifiedToastSystem.show(`❌ ${reason}. Server-side processing still unavailable.`, 'error', 4000);
+            }
+        };
+        
+        // Update backend status indicator
+        function updateBackendStatus(status, message) {
+            const statusElement = document.getElementById('backend-status');
+            if (!statusElement) return;
+            
+            const dot = statusElement.querySelector('div');
+            const text = statusElement.querySelector('span');
+            
+            switch (status) {
+                case 'checking':
+                    dot.className = 'w-2 h-2 bg-yellow-400 rounded-full mr-2 animate-pulse';
+                    text.textContent = message || 'Checking server...';
+                    break;
+                case 'available':
+                    dot.className = 'w-2 h-2 bg-green-500 rounded-full mr-2';
+                    text.textContent = message || 'Server available';
+                    break;
+                case 'unavailable':
+                    dot.className = 'w-2 h-2 bg-red-500 rounded-full mr-2';
+                    text.textContent = message || 'Server unavailable';
+                    break;
+                case 'client-only':
+                    dot.className = 'w-2 h-2 bg-blue-500 rounded-full mr-2';
+                    text.textContent = message || 'Client-side only';
+                    break;
+            }
+        }
         
         // Conversion mode selection
         function selectConversionMode(mode) {
@@ -1215,13 +1409,28 @@ Text extraction quality depends on the original PDF format. Scanned PDFs may req
                     
                 } catch (error) {
                     console.error('Server-side processing error:', error);
-                    UnifiedToastSystem.show(`❌ Server conversion failed: ${error.message}`, 'error', 6000);
                     
-                    // Offer fallback to client-side
-                    if (confirm('Server conversion failed. Would you like to try basic client-side conversion instead?')) {
+                    // Show detailed error message
+                    let errorMessage = 'Server conversion failed';
+                    if (error.message.includes('not available')) {
+                        errorMessage = 'Backend server is currently not available';
+                    } else if (error.message.includes('timeout')) {
+                        errorMessage = 'Server response timeout';
+                    } else if (error.message.includes('network')) {
+                        errorMessage = 'Network connection error';
+                    }
+                    
+                    UnifiedToastSystem.show(`❌ ${errorMessage}. Switching to client-side mode...`, 'warning', 6000);
+                    
+                    // Automatically fallback to client-side mode
+                    try {
                         conversionMode = 'client';
                         selectConversionMode('client');
+                        UnifiedToastSystem.show('🔄 Switched to client-side processing. Starting conversion...', 'info', 4000);
                         await this.convertFilesClientSide();
+                    } catch (fallbackError) {
+                        console.error('Client-side fallback failed:', fallbackError);
+                        UnifiedToastSystem.show(`❌ Both server and client-side conversion failed: ${fallbackError.message}`, 'error', 8000);
                     }
                 } finally {
                     showProgress(false);
@@ -1231,13 +1440,38 @@ Text extraction quality depends on the original PDF format. Scanned PDFs may req
             // Check backend health
             async checkBackendHealth() {
                 try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+                    
                     const response = await fetch(`${BACKEND_CONFIG.baseUrl}/health`, {
                         method: 'GET',
-                        timeout: 5000
+                        signal: controller.signal,
+                        headers: {
+                            'Accept': 'application/json',
+                        }
                     });
-                    return response.ok;
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) {
+                        console.warn(`Backend health check failed with status: ${response.status}`);
+                        return false;
+                    }
+                    
+                    const healthData = await response.json();
+                    console.log('Backend health check passed:', healthData);
+                    return true;
+                    
                 } catch (error) {
                     console.warn('Backend health check failed:', error);
+                    
+                    // Show user-friendly message based on error type
+                    if (error.name === 'AbortError') {
+                        UnifiedToastSystem.show('⏱️ Backend server response timeout. Using client-side mode.', 'warning', 5000);
+                    } else if (error.message.includes('fetch')) {
+                        UnifiedToastSystem.show('🌐 Cannot connect to backend server. Using client-side mode.', 'info', 5000);
+                    }
+                    
                     return false;
                 }
             }
