@@ -289,7 +289,7 @@
                 <!-- Content Input -->
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Content</label>
-                    <textarea id="qrContent" rows="4" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter your content here...">https://example.com</textarea>
+                    <textarea id="qrContent" rows="4" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter text, URL, or any content...">Hello World! 👋</textarea>
                 </div>
                 
                 <!-- QR Code Size -->
@@ -628,8 +628,8 @@
         }
 
         // Use global theme functions if available, otherwise use local ones
-        function initTheme() {
-            if (typeof window.initTheme === 'function') {
+        function initLocalTheme() {
+            if (typeof window.initTheme === 'function' && window.initTheme !== initLocalTheme) {
                 window.initTheme();
             } else {
                 const isDark = localStorage.getItem('theme') === 'dark' || 
@@ -638,8 +638,8 @@
             }
         }
         
-        function toggleTheme() {
-            if (typeof window.toggleTheme === 'function') {
+        function toggleLocalTheme() {
+            if (typeof window.toggleTheme === 'function' && window.toggleTheme !== toggleLocalTheme) {
                 window.toggleTheme();
             } else {
                 const isDark = document.documentElement.classList.toggle('dark');
@@ -654,13 +654,20 @@
                 this.generationTimeout = null;
                 this.logoImage = null;
                 this.downloadSize = 512; // Default download size
+                this.lastGeneratedContent = ''; // Track last generated content to avoid duplicate toasts
                 this.init();
             }
             
             init() {
                 this.setupEventListeners();
                 this.updateSizeDisplay();
-                setTimeout(() => this.generateQRCode(), 500);
+                
+                // Generate initial QR code with a flag to suppress toast
+                this.isInitialGeneration = true;
+                setTimeout(() => {
+                    this.generateQRCode();
+                    this.isInitialGeneration = false;
+                }, 200);
             }
             
             setupEventListeners() {
@@ -675,27 +682,42 @@
                 const backgroundColor = document.getElementById('backgroundColor');
                 const logoUpload = document.getElementById('logoUpload');
                 
-                // Auto-generate on any change
+                // Auto-generate on any change with debounced delay
                 const autoGenerate = () => {
                     clearTimeout(this.generationTimeout);
                     this.generationTimeout = setTimeout(() => {
-                        if (qrContent.value.trim()) {
-                            this.generateQRCode();
-                        }
-                    }, 300);
+                        this.generateQRCode();
+                    }, 300); // Increased delay to prevent too frequent generations
                 };
+                
+                // Real-time input listeners for immediate feedback
+                qrContent.addEventListener('input', () => {
+                    autoGenerate();
+                });
+                
+                qrContent.addEventListener('keyup', () => {
+                    autoGenerate();
+                });
+                
+                qrContent.addEventListener('paste', () => {
+                    setTimeout(autoGenerate, 50); // Small delay for paste to register
+                });
                 
                 qrSize.addEventListener('input', () => {
                     this.updateSizeDisplay();
                     autoGenerate();
                 });
                 
-                qrContent.addEventListener('input', autoGenerate);
                 qrBottomText.addEventListener('input', autoGenerate);
+                qrBottomText.addEventListener('keyup', autoGenerate);
                 textColor.addEventListener('change', autoGenerate);
+                textColor.addEventListener('input', autoGenerate);
                 canvasBackground.addEventListener('change', autoGenerate);
+                canvasBackground.addEventListener('input', autoGenerate);
                 foregroundColor.addEventListener('change', autoGenerate);
+                foregroundColor.addEventListener('input', autoGenerate);
                 backgroundColor.addEventListener('change', autoGenerate);
+                backgroundColor.addEventListener('input', autoGenerate);
                 
                 // Download buttons
                 downloadPNG.addEventListener('click', () => this.downloadPNG());
@@ -740,9 +762,11 @@
             
             generateQRCode() {
                 const content = document.getElementById('qrContent').value.trim();
+                
+                // Always show something, even for empty content
                 if (!content) {
                     const preview = document.getElementById('qrPreview');
-                    preview.innerHTML = '<div class="text-center text-gray-500"><svg class="w-16 h-16 mx-auto mb-4 text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zm8-2v8h8V3h-8zm6 6h-4V5h4v4zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm13-2h3v2h-3v-2zm0-4h3v2h-3v-2zm-2 4h2v2h-2v-2zm-2 0h2v2h-2v-2zm-2-2h2v2h-2v-2zm-2 0h2v2h-2v-2zm-2-2h2v2h-2v-2zm-2 0h2v2h-2v-2z"/></svg><p>Enter content to generate QR code</p></div>';
+                    preview.innerHTML = '<div class="text-center text-gray-500"><svg class="w-16 h-16 mx-auto mb-4 text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zm8-2v8h8V3h-8zm6 6h-4V5h4v4zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm13-2h3v2h-3v-2zm0-4h3v2h-3v-2zm-2 4h2v2h-2v-2zm-2 0h2v2h-2v-2zm-2-2h2v2h-2v-2zm-2 0h2v2h-2v-2zm-2-2h2v2h-2v-2zm-2 0h2v2h-2v-2z"/></svg><p>Type something to generate QR code...</p></div>';
                     document.getElementById('downloadOptions').classList.add('hidden');
                     return;
                 }
@@ -832,8 +856,14 @@
                     preview.appendChild(canvas);
                     this.currentCanvas = canvas;
                     
-                    if (typeof UnifiedToastSystem !== 'undefined') {
-                        UnifiedToastSystem.show('QR code generated successfully!', 'success');
+                    // Only show success toast for new content (not initial generation)
+                    if (!this.isInitialGeneration && content !== this.lastGeneratedContent) {
+                        this.lastGeneratedContent = content;
+                        if (typeof UnifiedToastSystem !== 'undefined') {
+                            UnifiedToastSystem.show('QR code generated successfully!', 'success');
+                        }
+                    } else if (this.isInitialGeneration) {
+                        this.lastGeneratedContent = content;
                     }
                     document.getElementById('downloadOptions').classList.remove('hidden');
                     
@@ -1028,7 +1058,7 @@
             if (typeof window.initTheme === 'function') {
                 window.initTheme();
             } else {
-                initTheme();
+                initLocalTheme();
             }
             
             // Initialize QR generator
@@ -1044,7 +1074,7 @@
                     if (typeof window.toggleTheme === 'function') {
                         window.toggleTheme();
                     } else {
-                        toggleTheme();
+                        toggleLocalTheme();
                     }
                 });
             }
