@@ -100,9 +100,9 @@
     <link rel="dns-prefetch" href="//github.com">
     
     <!-- Critical Resource Preloads -->
-    <link rel="preload" href="public/styles.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="preload" href="public/css/premium-buttons.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="preload" href="public/script.js" as="script">
+    <link rel="preload" href="styles.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="css/premium-buttons.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="script.js" as="script">
     
     <!-- Performance Optimization Meta Tags -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -119,18 +119,17 @@
     <link rel="alternate" hreflang="x-default" href="https://techuhat.github.io/toolkit/">
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="public/manifest.json">
+    <link rel="manifest" href="/manifest.json">
     
     <!-- Favicon with better formats -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234F46E5'><path d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-4-4h-4v-2h4v2zm0-4H9v-2h6v2z'/></svg>">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234F46E5'><path d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-4-4h-4v-2h4v2zm0-4H9v-2h6v2z'/></svg>">
     
     <!-- PERFORMANCE: Use only minified, purged Tailwind CSS for used classes -->
-    <link rel="stylesheet" href="public/styles.min.css?v=2.3.1">
-    <link rel="stylesheet" href="public/tailwind-complete.css?v=2.3.1">
-    <link rel="stylesheet" href="public/css/all.min.css?v=2.3.1">
-    <link rel="stylesheet" href="public/css/premium-buttons.css?v=2.3.1">
-    <link rel="stylesheet" href="public/css/icon-fix.css?v=2.3.1">
+    <link rel="stylesheet" href="styles.min.css?v=2.3.1">
+    <link rel="stylesheet" href="tailwind-complete.css?v=2.3.1">
+    <link rel="stylesheet" href="css/all.min.css?v=2.3.1">
+    <link rel="stylesheet" href="css/premium-buttons.css?v=2.3.1">
     
     <!-- Theme initialization script - runs immediately -->
     <script>
@@ -400,35 +399,6 @@
             background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%) !important;
             color: #ffffff !important;
             font-weight: 400;
-        }
-        
-        /* Icon Size Consistency - Global Fix */
-        .tool-card .w-12.h-12 svg {
-            width: 1.5rem !important;
-            height: 1.5rem !important;
-        }
-        
-        .w-16.h-16 svg:not(.hero-icon):not(.large-icon) {
-            width: 1.5rem !important;
-            height: 1.5rem !important;
-        }
-        
-        /* Navigation icons should remain small */
-        nav svg {
-            width: 1.25rem !important;
-            height: 1.25rem !important;
-        }
-        
-        /* Tool card icons standardization */
-        .tool-card svg {
-            width: 1.5rem !important;
-            height: 1.5rem !important;
-        }
-        
-        /* Feature card icons standardization */
-        .feature-card svg {
-            width: 1.5rem !important;
-            height: 1.5rem !important;
         }
         
         .dark .bg-white {
@@ -1773,39 +1743,6 @@
                 position: relative !important;
             }
         }
-        
-        /* Icon Size Consistency - Global Fix for File Organization Issue */
-        .tool-card .w-12.h-12 svg,
-        .tool-card svg.w-6.h-6,
-        .tool-card svg.w-8.h-8 {
-            width: 1.5rem !important;
-            height: 1.5rem !important;
-        }
-        
-        /* Fix oversized icons in tool cards after file reorganization */
-        .w-16.h-16 svg:not(.hero-icon):not(.large-icon):not(.preview-icon) {
-            width: 1.5rem !important;
-            height: 1.5rem !important;
-        }
-        
-        /* Navigation icons should remain small */
-        nav svg.w-5.h-5,
-        nav svg.w-4.h-4 {
-            width: 1.25rem !important;
-            height: 1.25rem !important;
-        }
-        
-        /* Feature card icons standardization */
-        .feature-card svg.w-6.h-6 {
-            width: 1.5rem !important;
-            height: 1.5rem !important;
-        }
-        
-        /* Arrow icons in tool cards should be smaller */
-        .tool-card svg.w-5.h-5 {
-            width: 1.25rem !important;
-            height: 1.25rem !important;
-        }
     </style>
     
 
@@ -1980,7 +1917,7 @@
             
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Image to PDF Tool -->
-                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='src/frontend/tools/image-tools/image-to-pdf.html'">
+                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='tools/image-to-pdf.html'">
                     <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mb-4 shadow-md">
                         <svg class="w-6 h-6 text-white dark:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 3C5.9 3 5 3.9 5 5v14c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V8.4c0-.5-.2-1-.5-1.4l-3.5-3.5C14.6 3.2 14.1 3 13.6 3H7zm0 2h6v4h4v10H7V5zm8 .8L17.2 8H15V5.8z"/></svg>
                     </div>
@@ -1993,7 +1930,7 @@
                 </div>
                 
                 <!-- PDF to Images Tool -->
-                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='src/frontend/tools/pdf-tools/pdf-to-images.html'">
+                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='tools/pdf-to-images.html'">
                     <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center mb-4 shadow-md">
                         <svg class="w-6 h-6 text-white dark:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5-7l-3 3.72L9 13l-3 4h12l-4-5z"/></svg>
                     </div>
@@ -2006,7 +1943,7 @@
                 </div>
                 
                 <!-- Image Compressor Tool -->
-                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='src/frontend/tools/image-tools/image-compressor.html'">
+                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='tools/image-compressor.html'">
                     <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mb-4 shadow-md">
                         <svg class="w-6 h-6 text-white dark:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="fill: white !important;"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z"/></svg>
                     </div>
@@ -2021,7 +1958,7 @@
                 </div>
                 
                 <!-- Image Resizer Tool -->
-                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='src/frontend/tools/image-tools/image-resizer.html'">
+                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='tools/image-resizer.html'">
                     <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center mb-4 shadow-md">
                         <svg class="w-6 h-6 text-white dark:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h6v2H5v4H3V3m2 16h4v2H3v-6h2v4m16 0v-4h2v6h-6v-2h4M19 3v2h-4V3h6v6h-2V5"/></svg>
                     </div>
@@ -2036,7 +1973,7 @@
                 </div>
                 
                 <!-- Format Converter Tool -->
-                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='src/frontend/tools/image-tools/format-converter.html'">
+                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='tools/format-converter.html'">
                     <div class="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center mb-4 shadow-md">
                         <svg class="w-6 h-6 text-white dark:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16 17l5-5-5-5v3H8v4h8v3zM8 7l-5 5 5 5v-3h8v-4H8V7z"/></svg>
                     </div>
@@ -2049,9 +1986,9 @@
                 </div>
                 
                 <!-- Batch Processor Tool -->
-                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='src/frontend/tools/utility-tools/batch-processor.html'">
+                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='tools/batch-processor.html'">
                     <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center mb-4 shadow-md">
-                        <svg class="w-6 h-6 text-white dark:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                        <svg class="w-8 h-8 text-white dark:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                     </div>
                     <h3 class="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Batch Processor</h3>
                     <p class="text-gray-600 dark:text-gray-300 mb-4">Process multiple files with combined operations</p>
@@ -2062,9 +1999,9 @@
                 </div>
                 
                 <!-- PDF to DOC Tool -->
-                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='src/frontend/tools/pdf-tools/pdf-to-doc.html'">
+                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='tools/pdf-to-doc.html'">
                     <div class="w-12 h-12 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center mb-4 shadow-md">
-                        <svg class="w-6 h-6 text-white dark:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>
+                        <img src="assets/svg-icons/pdf-to-doc-icon.svg" alt="PDF to DOC" class="w-6 h-6 text-white dark:text-white" style="filter: brightness(0) invert(1);">
                     </div>
                     <h3 class="text-xl font-semibold mb-2 text-gray-900 dark:text-white">PDF to DOC</h3>
                     <p class="text-gray-600 dark:text-gray-300 mb-4">Convert PDF files to DOC/DOCX format with high accuracy</p>
@@ -2075,9 +2012,9 @@
                 </div>
                 
                 <!-- PDF Compressor Tool -->
-                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='src/frontend/tools/pdf-tools/pdf-compressor.html'">
+                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='tools/pdf-compressor.html'">
                     <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mb-4 shadow-md">
-                        <svg class="w-6 h-6 text-white dark:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z"/></svg>
+                        <i class="fas fa-compress-alt text-white dark:text-white text-lg"></i>
                     </div>
                     <h3 class="text-xl font-semibold mb-2 text-gray-900 dark:text-white">PDF Compressor</h3>
                     <p class="text-gray-600 dark:text-gray-300 mb-4">Reduce PDF file size while maintaining quality</p>
@@ -2088,7 +2025,7 @@
                 </div>
                 
                 <!-- QR Code Generator Tool -->
-                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='src/frontend/tools/utility-tools/qr-generator.html'">
+                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='tools/qr-generator.html'">
                     <div class="w-12 h-12 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-lg flex items-center justify-center mb-4 shadow-md">
                         <svg class="w-6 h-6 text-white dark:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zm8-2v8h8V3h-8zm6 6h-4V5h4v4zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm13-2h3v2h-3v-2zm0-4h3v2h-3v-2zm-2 4h2v2h-2v-2zm-2 0h2v2h-2v-2zm-2-2h2v2h-2v-2zm-2 0h2v2h-2v-2zm-2-2h2v2h-2v-2zm-2 0h2v2h-2v-2z"/></svg>
                     </div>
@@ -2128,25 +2065,25 @@
                 <div>
                     <h4 class="font-semibold mb-4">Tools</h4>
                     <ul class="space-y-2 text-gray-400">
-                        <li><a href="src/frontend/tools/image-tools/image-to-pdf.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Image to PDF</a></li>
-                        <li><a href="src/frontend/tools/pdf-tools/pdf-to-images.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">PDF to Images</a></li>
-                        <li><a href="src/frontend/tools/image-tools/image-compressor.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Image Compressor</a></li>
-                        <li><a href="src/frontend/tools/image-tools/image-resizer.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Image Resizer</a></li>
-                        <li><a href="src/frontend/tools/image-tools/format-converter.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Format Converter</a></li>
-                        <li><a href="src/frontend/tools/utility-tools/batch-processor.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Batch Processor</a></li>
-                        <li><a href="src/frontend/tools/pdf-tools/pdf-to-doc.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">PDF to DOC</a></li>
-                        <li><a href="src/frontend/tools/pdf-tools/pdf-compressor.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">PDF Compressor</a></li>
-                        <li><a href="src/frontend/tools/utility-tools/qr-generator.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">QR Code Generator</a></li>
+                        <li><a href="tools/image-to-pdf.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Image to PDF</a></li>
+                        <li><a href="tools/pdf-to-images.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">PDF to Images</a></li>
+                        <li><a href="tools/image-compressor.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Image Compressor</a></li>
+                        <li><a href="tools/image-resizer.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Image Resizer</a></li>
+                        <li><a href="tools/format-converter.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Format Converter</a></li>
+                        <li><a href="tools/batch-processor.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Batch Processor</a></li>
+                        <li><a href="tools/pdf-to-doc.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">PDF to DOC</a></li>
+                        <li><a href="tools/pdf-compressor.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">PDF Compressor</a></li>
+                        <li><a href="tools/qr-generator.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">QR Code Generator</a></li>
                     </ul>
                 </div>
                 
                 <div>
                     <h4 class="font-semibold mb-4">Company</h4>
                     <ul class="space-y-2 text-gray-400">
-                        <li><a href="src/frontend/pages/about.html" class="hover:text-white transition-colors">About Us</a></li>
-                        <li><a href="src/frontend/pages/privacy.html" class="hover:text-white transition-colors">Privacy Policy</a></li>
-                        <li><a href="src/frontend/pages/terms.html" class="hover:text-white transition-colors">Terms of Service</a></li>
-                        <li><a href="src/frontend/pages/contact.html" class="hover:text-white transition-colors">Contact</a></li>
+                        <li><a href="about.html" class="hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="privacy.html" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                        <li><a href="terms.html" class="hover:text-white transition-colors">Terms of Service</a></li>
+                        <li><a href="contact.html" class="hover:text-white transition-colors">Contact</a></li>
                     </ul>
                 </div>
                 
@@ -2384,7 +2321,89 @@
                 currentX = 0;
             }
         }
-
+            
+            // Mouse events for desktop
+            inner.addEventListener('mousedown', handleMouseStart);
+            inner.addEventListener('mousemove', handleMouseMove);
+            inner.addEventListener('mouseup', handleMouseEnd);
+            // REMOVED: mouseleave event that was causing hover issues
+            
+            function handleTouchStart(e) {
+                startX = e.touches[0].clientX;
+                isDragging = true;
+                const transform = getComputedStyle(inner).transform;
+                initialTransform = transform === 'none' ? 0 : parseFloat(transform.split(',')[4]) || 0;
+                inner.style.transition = 'none';
+                e.preventDefault();
+            }
+            
+            function handleMouseStart(e) {
+                startX = e.clientX;
+                isDragging = true;
+                const transform = getComputedStyle(inner).transform;
+                initialTransform = transform === 'none' ? 0 : parseFloat(transform.split(',')[4]) || 0;
+                inner.style.transition = 'none';
+                e.preventDefault();
+            }
+            
+            function handleTouchMove(e) {
+                if (!isDragging) return;
+                currentX = e.touches[0].clientX;
+                updateSwipePosition();
+                e.preventDefault();
+            }
+            
+            function handleMouseMove(e) {
+                if (!isDragging) return;
+                currentX = e.clientX;
+                updateSwipePosition();
+                e.preventDefault();
+            }
+            
+            function updateSwipePosition() {
+                const deltaX = currentX - startX;
+                const newTransform = initialTransform + deltaX;
+                
+                // Only allow swiping to the right (positive X)
+                if (newTransform >= 0) {
+                    inner.style.transform = `translateX(${newTransform}px)`;
+                    
+                    // Add visual feedback for swipe
+                    const opacity = Math.max(0.3, 1 - (newTransform / 200));
+                    inner.style.opacity = opacity;
+                }
+            }
+            
+            function handleTouchEnd(e) {
+                handleEnd();
+            }
+            
+            function handleMouseEnd(e) {
+                handleEnd();
+            }
+            
+            function handleEnd() {
+                if (!isDragging) return;
+                isDragging = false;
+                
+                const deltaX = currentX - startX;
+                inner.style.transition = 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                
+                // If swiped more than 100px to the right, dismiss the toast
+                if (deltaX > 100) {
+                    dismissToastElement(toast);
+                } else {
+                    // Snap back to original position
+                    inner.style.transform = 'translateX(0)';
+                    inner.style.opacity = '1';
+                }
+                
+                startX = 0;
+                currentX = 0;
+                initialTransform = 0;
+            }
+        }
+        
         // Make the function globally accessible
         window.originalShowToast = showToast;
 
@@ -2536,58 +2555,28 @@
         
         // Theme Management
         function initTheme() {
-            console.log('Index.html: initTheme called');
             const savedTheme = localStorage.getItem('theme');
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
             
-            if (isDark) {
+            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
                 document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-            
-            // Sync toggle state if element exists
-            const toggle = document.getElementById('dn');
-            if (toggle) {
-                toggle.checked = isDark;
-                console.log('Index.html: Theme initialized to:', isDark ? 'dark' : 'light', 'Toggle checked:', toggle.checked);
-            } else {
-                console.warn('Index.html: Toggle element not found during init');
             }
         }
         
         function toggleTheme() {
-            const toggle = document.getElementById('dn');
             const isDark = document.documentElement.classList.contains('dark');
             
             if (isDark) {
                 document.documentElement.classList.remove('dark');
                 localStorage.setItem('theme', 'light');
-                if (toggle) toggle.checked = false;
             } else {
                 document.documentElement.classList.add('dark');
                 localStorage.setItem('theme', 'dark');
-                if (toggle) toggle.checked = true;
             }
-            
-            // Show theme change notification
-            if (typeof UnifiedToastSystem !== 'undefined') {
-                const themeName = isDark ? 'Light' : 'Dark';
-                showToast(`🌓 Switched to ${themeName} mode`, 'info', 2000);
-            }
-            
-            console.log('Theme toggled to:', isDark ? 'light' : 'dark');
         }
         
         // Initialize theme on page load
         initTheme();
-        
-        // Also initialize on DOM ready to ensure element exists
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Index.html: DOM ready, re-initializing theme');
-            initTheme();
-        });
         
         // Mobile Menu Functions
         function toggleMobileMenu() {
@@ -2659,8 +2648,37 @@
 
         // Theme toggle event listener and global initialization
         document.addEventListener('DOMContentLoaded', function() {
-            // Theme initialization is handled by script.js
-            // Global drag and drop initialization is handled by script.js
+            const toggle = document.getElementById('dn');
+            
+            // Check for saved theme preference
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                toggle.checked = savedTheme === 'dark';
+                // Apply theme based on saved preference
+                if (savedTheme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            } else {
+                // Set toggle based on current theme
+                toggle.checked = document.documentElement.classList.contains('dark');
+            }
+            
+            // Listen for toggle changes
+            toggle.addEventListener('change', function() {
+                const theme = this.checked ? 'dark' : 'light';
+                localStorage.setItem('theme', theme);
+                
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            });
+            
+            // Initialize global drag and drop functionality
+            setupGlobalDragDrop();
         });
         
 
@@ -3874,6 +3892,6 @@ For more tools, visit our homepage for image compression, resizing, and format c
             window.addEventListener('scroll', checkScrollForWelcomeToast, { passive: true });
         });
     </script>
-    <script src="public/script.js?v=2.3.1"></script>
+    <script src="script.js?v=2.3.1"></script>
 </body>
 </html>

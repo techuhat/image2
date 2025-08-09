@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Cache Control for Development -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <title>Format Converter - Convert Images Online | ImagePDF Toolkit</title>
+    <meta name="description" content="Convert images between JPG, PNG, WebP, AVIF, and BMP with optional quality control. 100% client-side.">
+    <meta name="keywords" content="image converter, jpg to png, png to jpg, webp converter, avif converter, format converter">
+    <meta name="author" content="ImagePDF Toolkit">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Format Converter - Convert Images Online">
+    <meta property="og:description" content="Convert images between formats (JPG, PNG, WebP, AVIF, BMP) with quality control.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://techuhat.github.io/toolkit/tools/format-converter.html">
+    <meta property="og:image" content="../images/og.png">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Format Converter - Convert Images Online">
+    <meta name="twitter:description" content="Convert images between formats (JPG, PNG, WebP, AVIF, BMP) with quality control.">
+    <meta name="twitter:image" content="../images/og.png">
+    
+    <!-- Additional SEO Meta Tags -->
+    <meta name="theme-color" content="#9333EA">
+    <link rel="canonical" href="https://techuhat.github.io/toolkit/tools/format-converter.html">
+    
+    <!-- Schema.org Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Image Compressor",
+        "description": "Reduce image file size while maintaining quality. Free online image compressor with advanced compression algorithms.",
+        "url": "https://techuhat.github.io/toolkit/tools/image-compressor.html",
+        "applicationCategory": "ImageOptimizer",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
+        "softwareVersion": "2.0",
+        "author": {
+            "@type": "Organization",
+            "name": "TechUhat",
+            "url": "https://github.com/techuhat"
+        },
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        }
+    }
+    </script>
+    
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="../assets/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../assets/favicon/favicon-16x16.png">
+    <link rel="manifest" href="../../../../public/manifest.json">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="../../../../public/styles.min.css?v=2.3.1">
+    <link rel="stylesheet" href="../../../../public/tailwind-complete.css?v=2.3.1">
+    <link rel="stylesheet" href="../../../../public/css/all.min.css?v=2.3.1">
+    <link rel="stylesheet" href="../../../../public/css/premium-buttons.css?v=2.3.1">
+    <link rel="stylesheet" href="../../../../public/css/icon-fix.css?v=2.3.1">
+    
+    <!-- Theme initialization script - runs immediately -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+    
+    <!-- External Libraries -->
+
+    
+    <style>
+        /* Toast Styles */
+        .toast {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            min-width: 300px;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 8px 16px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transform: translateX(120%);
+            opacity: 0;
+            animation: slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            position: relative;
+            overflow: hidden;
+            pointer-events: auto;
+            color: white;
+        }
+        
+        .toast.hiding {
+            animation: slideOut 0.3s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
+        }
+        
+        .toast-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .toast-icon {
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        
+        .toast-message {
+            color: white;
+            font-size: 0.95rem;
+            font-weight: 500;
+            line-height: 1.4;
+            flex: 1;
+        }
+        
+        .toast-close {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            font-size: 1.25rem;
+            padding: 4px;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        
+        .toast-close:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .toast .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #4ade80, #22c55e);
+            border-radius: 0 0 16px 16px;
+            animation: progress 4s linear forwards;
+            z-index: 1;
+        }
+        
+        .toast.error .progress-bar {
+            background: linear-gradient(90deg, #ef4444, #dc2626);
+        }
+        
+        .toast.warning .progress-bar {
+            background: linear-gradient(90deg, #f59e0b, #d97706);
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes progress {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+
+        :root {
+            --primary-color: #7C3AED;
+            --primary-hover: #6D28D9;
+        }
+        
+        .tool-gradient {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+        }
+        
+        .file-drop-zone {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(109, 40, 217, 0.1));
+            border: 2px dashed var(--primary-color);
+            transition: all 0.3s ease;
+        }
+        
+        .file-drop-zone.drag-over {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(109, 40, 217, 0.2));
+            border-color: var(--primary-hover);
+            transform: scale(1.02);
+        }
+        
+        .compression-preview {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.05), rgba(109, 40, 217, 0.05));
+            border-radius: 12px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+        }
+
+        /* Day/Night Toggle Switch Styles */
+        .toggleWrapper {
+            position: relative !important;
+            overflow: hidden !important;
+            padding: 0 !important;
+            display: inline-block !important;
+        }
+
+        .toggleWrapper input {
+            position: absolute !important;
+            left: -9999px !important;
+            opacity: 0 !important;
+        }
+
+        /* Default state - Day mode */
+        .toggle {
+            cursor: pointer !important;
+            display: inline-block !important;
+            position: relative !important;
+            width: 45px !important;
+            height: 25px !important;
+            background-color: #83D8FF !important;
+            border-radius: 84px !important;
+            transition: background-color 200ms cubic-bezier(0.445, 0.05, 0.55, 0.95) !important;
+        }
+
+        .toggle__handler {
+            display: inline-block !important;
+            position: relative !important;
+            z-index: 1 !important;
+            top: 2px !important;
+            left: 2px !important;
+            width: 21px !important;
+            height: 21px !important;
+            background-color: #FFCF96 !important;
+            border-radius: 50px !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,.3) !important;
+            transition: all 400ms cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+            transform: rotate(-45deg) !important;
+        }
+
+        .crater {
+            position: absolute !important;
+            background-color: #E8CDA5 !important;
+            opacity: 0 !important;
+            transition: opacity 200ms ease-in-out !important;
+            border-radius: 100% !important;
+        }
+
+        .crater--1 {
+            top: 9px !important;
+            left: 5px !important;
+            width: 2px !important;
+            height: 2px !important;
+        }
+
+        .crater--2 {
+            top: 14px !important;
+            left: 11px !important;
+            width: 3px !important;
+            height: 3px !important;
+        }
+
+        .crater--3 {
+            top: 5px !important;
+            left: 12px !important;
+            width: 4px !important;
+            height: 4px !important;
+        }
+
+        .star {
+            position: absolute !important;
+            background-color: #ffffff !important;
+            transition: all 300ms cubic-bezier(0.445, 0.05, 0.55, 0.95) !important;
+            border-radius: 50% !important;
+        }
+
+        .star--1 {
+            top: 5px !important;
+            left: 17px !important;
+            z-index: 0 !important;
+            width: 15px !important;
+            height: 2px !important;
+        }
+
+        .star--2 {
+            top: 9px !important;
+            left: 14px !important;
+            z-index: 1 !important;
+            width: 15px !important;
+            height: 2px !important;
+        }
+
+        .star--3 {
+            top: 14px !important;
+            left: 20px !important;
+            z-index: 0 !important;
+            width: 15px !important;
+            height: 2px !important;
+        }
+
+        .star--4,
+        .star--5,
+        .star--6 {
+            opacity: 0 !important;
+            transition: all 300ms 0 cubic-bezier(0.445, 0.05, 0.55, 0.95) !important;
+        }
+
+        .star--4 {
+            top: 8px !important;
+            left: 6px !important;
+            z-index: 0 !important;
+            width: 1px !important;
+            height: 1px !important;
+            transform: translate3d(3px,0,0) !important;
+        }
+
+        .star--5 {
+            top: 16px !important;
+            left: 9px !important;
+            z-index: 0 !important;
+            width: 1.5px !important;
+            height: 1.5px !important;
+            transform: translate3d(3px,0,0) !important;
+        }
+
+        .star--6 {
+            top: 18px !important;
+            left: 14px !important;
+            z-index: 0 !important;
+            width: 1px !important;
+            height: 1px !important;
+            transform: translate3d(3px,0,0) !important;
+        }
+
+        /* Night mode - Checked state styles */
+        input:checked + .toggle {
+            background-color: #749DD6 !important;
+        }
+
+        input:checked + .toggle .toggle__handler {
+            background-color: #FFE5B5 !important;
+            transform: translate3d(20px, 0, 0) rotate(0deg) !important;
+        }
+
+        input:checked + .toggle .crater {
+            opacity: 1 !important;
+        }
+
+        input:checked + .toggle .star--1 {
+            width: 1px !important;
+            height: 1px !important;
+        }
+
+        input:checked + .toggle .star--2 {
+            width: 2px !important;
+            height: 2px !important;
+            transform: translate3d(-5px, 0, 0) !important;
+        }
+
+        input:checked + .toggle .star--3 {
+            width: 1px !important;
+            height: 1px !important;
+            transform: translate3d(-7px, 0, 0) !important;
+        }
+
+        input:checked + .toggle .star--4,
+        input:checked + .toggle .star--5,
+        input:checked + .toggle .star--6 {
+            opacity: 1 !important;
+            transform: translate3d(0,0,0) !important;
+        }
+
+        input:checked + .toggle .star--4 {
+            transition: all 300ms 200ms cubic-bezier(0.445, 0.05, 0.55, 0.95) !important;
+        }
+
+        input:checked + .toggle .star--5 {
+            transition: all 300ms 300ms cubic-bezier(0.445, 0.05, 0.55, 0.95) !important;
+        }
+
+        input:checked + .toggle .star--6 {
+            transition: all 300ms 400ms cubic-bezier(0.445, 0.05, 0.55, 0.95) !important;
+        }
+    </style>
+</head>
+<body class="theme-transition bg-slate-50 dark:bg-gray-900 text-slate-800 dark:text-gray-100 min-h-screen">
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+    
+    <!-- Progress Bar -->
+    <div id="progress-container" class="fixed top-0 left-0 w-full h-1 z-40 hidden">
+        <div id="progress-bar" class="h-full progress-bar" style="width: 0%"></div>
+    </div>
+    
+    <!-- Navigation -->
+    <nav class="glass-effect sticky top-0 z-30 backdrop-blur-lg" role="navigation" aria-label="Main navigation">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <a href="../../../../index.html" class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg" aria-hidden="true">
+                            <div class="relative">
+                                <svg class="w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z M8.5 12.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
+                                <svg class="w-4 h-4 text-blue-200 absolute -top-1 -right-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z M8.5 12.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
+                            </div>
+                        </div>
+                        <div class="flex flex-col">
+                            <h1 class="text-xl font-bold text-gray-900 dark:text-white">ImagePDF Toolkit</h1>
+                             <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Format Converter</span>
+                        </div>
+                    </a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- Theme Toggle -->
+                    <div class="toggleWrapper">
+                        <input type="checkbox" id="dn" aria-label="Toggle dark mode" />
+                        <label for="dn" class="toggle" aria-label="Dark mode toggle">
+                            <span class="toggle__handler" aria-hidden="true">
+                                <span class="crater crater--1"></span>
+                                <span class="crater crater--2"></span>
+                                <span class="crater crater--3"></span>
+                            </span>
+                            <span class="star star--1" aria-hidden="true"></span>
+                            <span class="star star--2" aria-hidden="true"></span>
+                            <span class="star star--3" aria-hidden="true"></span>
+                            <span class="star star--4" aria-hidden="true"></span>
+                            <span class="star star--5" aria-hidden="true"></span>
+                            <span class="star star--6" aria-hidden="true"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Hero Section -->
+        <section class="text-center mb-12">
+            <div class="inline-flex items-center justify-center w-20 h-20 tool-gradient rounded-2xl shadow-lg mb-6">
+                <svg class="w-10 h-10 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M4 9h1v1h1v1H4v-2zm17 0h-1v1h-1v1h2V9zM4 15h1v-1h1v-1H4v2zm17 0h-1v-1h-1v-1h2v2zM8 4v1H7v1h2V4H8zm9 0v1h1v1h1V4h-2zM8 20v-1H7v-1h2v2H8zm9 0v-1h1v-1h1v2h-2z"/>
+                </svg>
+            </div>
+            <h1 class="text-4xl font-bold mb-4 text-slate-900 dark:text-white">Format Converter</h1>
+            <p class="text-xl text-slate-600 dark:text-gray-300 mb-8">
+                Convert images between JPG, PNG, WebP, AVIF and more with quality control
+            </p>
+        </section>
+        
+        <!-- Tool Interface -->
+        <section class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
+            <div class="mb-8">
+                <!-- File Upload Zone -->
+                <div class="file-drop-zone rounded-xl p-8 text-center mb-6" id="drop-zone">
+                    <div class="max-w-md mx-auto">
+                        <div class="w-20 h-20 bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900 dark:to-violet-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-10 h-10 text-purple-600 dark:text-purple-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5-7l-3 3.72L9 13l-3 4h12l-4-5z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                            Drop images here
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">
+                            or click to browse files
+                        </p>
+                        <input type="file" id="file-input" multiple accept="image/*" class="hidden">
+                        <button onclick="document.getElementById('file-input').click()" class="btn-base btn-secondary btn-lg">
+                            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5-7l-3 3.72L9 13l-3 4h12l-4-5z"/>
+                            </svg>
+                            Choose Images
+                        </button>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-4">
+                            Supports JPG, PNG, WebP, AVIF and more formats
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Conversion Controls -->
+                <div class="grid md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Output Format</label>
+                        <select id="output-format" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                            <option value="jpeg">JPEG (.jpg)</option>
+                            <option value="png">PNG (.png)</option>
+                            <option value="webp">WebP (.webp)</option>
+                            <option value="avif">AVIF (.avif)</option>
+                            <option value="bmp">BMP (.bmp)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Quality: <span id="convert-quality-value">90</span>%</label>
+                        <input type="range" id="convert-quality" min="10" max="100" value="90" class="w-full">
+                    </div>
+                </div>
+                
+                <!-- Compression Stats -->
+                <div id="compression-stats" class="hidden bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                            <div class="text-sm text-gray-500">Original</div>
+                            <div id="original-size" class="font-bold">-</div>
+                        </div>
+                        <div>
+                            <div class="text-sm text-gray-500">Compressed</div>
+                            <div id="compressed-size" class="font-bold">-</div>
+                        </div>
+                        <div>
+                            <div class="text-sm text-gray-500">Saved</div>
+                            <div id="saved-percentage" class="font-bold text-green-600">-</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- File Preview -->
+                <div id="file-preview" class="hidden mb-6">
+                    <h3 class="text-lg font-semibold mb-4">Selected Files</h3>
+                    <div id="file-list" class="space-y-2 mb-4"></div>
+                    <div id="image-preview-grid" class="image-preview-grid"></div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="btn-group btn-group-full">
+                    <button id="process-btn" class="btn-base btn-primary btn-lg" disabled>
+                        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M4 9h1v1h1v1H4v-2zm17 0h-1v1h-1v1h2V9zM4 15h1v-1h1v-1H4v2zm17 0h-1v-1h-1v-1h2v2zM8 4v1H7v1h2V4H8zm9 0v1h1v1h1V4h-2zM8 20v-1H7v-1h2v2H8zm9 0v-1h1v-1h1v2h-2z"/>
+                        </svg>
+                        Convert Images
+                    </button>
+                    <button id="download-btn" class="btn-base btn-success btn-lg hidden" disabled>
+                        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                        </svg>
+                        Download All
+                    </button>
+                </div>
+                
+                <!-- Results -->
+                <div id="results" class="mt-6 hidden">
+                    <h3 class="text-lg font-semibold mb-4">Compressed Images</h3>
+                    <div id="results-list" class="space-y-2"></div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Features Section -->
+        <section class="grid md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+                <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mb-4 shadow-md">
+                    <svg class="w-6 h-6 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Batch Processing</h3>
+                <p class="text-gray-600 dark:text-gray-300">Compress multiple images simultaneously for maximum efficiency.</p>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mb-4 shadow-md">
+                    <svg class="w-6 h-6 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10S2 17.514 2 12 6.486 2 12 2zm0 18c4.411 0 8-3.589 8-8s-3.589-8-8-8-8 3.589-8 8 3.589 8 8 8z"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Quality Control</h3>
+                <p class="text-gray-600 dark:text-gray-300">Adjust compression levels to balance file size and image quality.</p>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+                <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center mb-4 shadow-md">
+                    <svg class="w-6 h-6 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-white">100% Private</h3>
+                <p class="text-gray-600 dark:text-gray-300">All processing happens locally in your browser. No uploads to servers.</p>
+            </div>
+        </section>
+        
+        <!-- Instructions -->
+        <section class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+            <h2 class="text-2xl font-bold mb-4 text-gray-900 dark:text-white">How to Use</h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Simple Steps</h3>
+                    <ol class="list-decimal list-inside space-y-2 text-gray-600 dark:text-gray-300">
+                        <li>Select or drag and drop your images</li>
+                        <li>Choose output format and optional quality</li>
+                        <li>Click "Convert Images" to process</li>
+                        <li>Download your converted images</li>
+                    </ol>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Supported Formats</h3>
+                    <ul class="list-disc list-inside space-y-1 text-gray-600 dark:text-gray-300">
+                        <li>JPEG/JPG</li>
+                        <li>PNG</li>
+                        <li>WebP</li>
+                        <li>AVIF</li>
+                        <li>BMP</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- Back to Tools Button -->
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
+        <a href="../../../../index.html#tools" class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" aria-label="Back to tools section">
+            <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+            Back to Tools
+        </a>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12" role="contentinfo" aria-label="Site footer">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg" aria-hidden="true">
+                            <div class="relative">
+                                <svg class="w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z M8.5 12.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
+                                <svg class="w-4 h-4 text-blue-200 absolute -top-1 -right-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z M8.5 12.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/></svg>
+                            </div>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-xl font-bold text-white">ImagePDF Toolkit</span>
+                            <span class="text-xs text-gray-400 font-medium">Professional Tools</span>
+                        </div>
+                    </div>
+                    <p class="text-gray-400">Professional image and PDF processing tools for modern workflows.</p>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Tools</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="image-to-pdf.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Image to PDF</a></li>
+                        <li><a href="pdf-to-images.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">PDF to Images</a></li>
+                        <li><a href="image-compressor.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Image Compressor</a></li>
+                        <li><a href="image-resizer.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Image Resizer</a></li>
+                        <li><a href="format-converter.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Format Converter</a></li>
+                        <li><a href="batch-processor.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Batch Processor</a></li>
+                        <li><a href="pdf-to-doc.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">PDF to DOC</a></li>
+                        <li><a href="qr-generator.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">QR Code Generator</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Company</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="../../pages/about.html" class="hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="../../pages/privacy.html" class="hover:text-white transition-colors">Privacy Policy</a></li>
+                        <li><a href="../../pages/terms.html" class="hover:text-white transition-colors">Terms of Service</a></li>
+                        <li><a href="../../pages/contact.html" class="hover:text-white transition-colors">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-4">Connect</h4>
+                    <div class="flex space-x-4">
+               <a href="https://github.com/techuhat" class="text-gray-400 hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">
+                            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><path fill="currentColor" d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+                        </a>
+                        <a href="https://www.linkedin.com/in/mohdkhanumar/" class="text-gray-400 hover:text-white transition-colors">
+                            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M100.28 448H7.4V148.9h92.88zM53.79 108.1C24.09 108.1 0 83.5 0 53.8a53.79 53.79 0 0 1 107.58 0c0 29.7-24.1 54.3-53.79 54.3zM447.9 448h-92.68V302.4c0-34.7-.7-79.2-48.29-79.2-48.29 0-55.69 37.7-55.69 76.7V448h-92.78V148.9h89.08v40.8h1.3c12.4-23.5 42.69-48.3 87.88-48.3 94 0 111.28 61.9 111.28 142.3V448z"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 ImagePDF Toolkit. All rights reserved. Design by Tech U ❤️</p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Core toolkit script -->
+    <script src="../../../../public/script.js?v=2.3.1"></script>
+    <!-- JSZip for multi-file ZIP downloads -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-J3UBbF7l10QmV5uF+Z0aW5E1H3q2u2k8p2U4kq9Q3Z4TtC6oJXw3qY0VYv3r6G6s2x9rN0xgYxZ0Q3r2wKp2eg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+        // Global variables for file handling
+        let currentFiles = [];
+        let processedFiles = [];
+        let currentTool = 'format-converter';
+        
+        // Toast notification function
+        // Remove all custom toast implementations - Using unified system from script.js
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set current tool for the script
+            currentTool = 'format-converter';
+            
+            // Initialize file handling
+            setupFileInput();
+            setupGlobalDragDrop();
+            
+            // Initialize format converter
+            setupFormatConverter();
+            
+            // Show tool loaded message using unified system
+            setTimeout(() => {
+                showToast('🔄 Format Converter ready! Upload images to convert.', 'success', 3000);
+            }, 500);
+        });
+        
+        // All custom toast functions removed - Using unified system only
+        
+        // Theme toggle setup
+        const themeToggle = document.getElementById('dn');
+        if (themeToggle) {
+            // Set initial state based on current theme
+            const isDark = document.documentElement.classList.contains('dark');
+            themeToggle.checked = isDark;
+            
+            // Add event listener
+            themeToggle.addEventListener('change', () => {
+                if (typeof window.toggleTheme === 'function') {
+                    window.toggleTheme();
+                }
+            });
+        }
+
+        // Helper function to update compression stats
+        function updateCompressionStats(originalSize, compressedSize) {
+            const originalSizeEl = document.getElementById('original-size');
+            const compressedSizeEl = document.getElementById('compressed-size');
+            const savedPercentageEl = document.getElementById('saved-percentage');
+            const compressionStats = document.getElementById('compression-stats');
+            
+            if (originalSizeEl && compressedSizeEl && savedPercentageEl && compressionStats) {
+                originalSizeEl.textContent = formatFileSize(originalSize);
+                compressedSizeEl.textContent = formatFileSize(compressedSize);
+                
+                const savedBytes = originalSize - compressedSize;
+                const savedPercent = ((savedBytes / originalSize) * 100).toFixed(1);
+                savedPercentageEl.textContent = `${savedPercent}% (${formatFileSize(savedBytes)})`;
+                
+                compressionStats.classList.remove('hidden');
+            }
+        }
+        function showResults() {
+            const results = document.getElementById('results');
+            const resultsList = document.getElementById('results-list');
+            const downloadBtn = document.getElementById('download-btn');
+            
+            // Show the main download button
+            if (downloadBtn) {
+                downloadBtn.classList.remove('hidden');
+                downloadBtn.disabled = false;
+                console.log('Main download button shown in showResults');
+            }
+            
+            if (results && resultsList) {
+                results.classList.remove('hidden');
+                resultsList.innerHTML = '';
+                
+                processedFiles.forEach((file, index) => {
+                    const resultItem = document.createElement('div');
+                    resultItem.className = 'flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-3 rounded-lg mb-2';
+                    resultItem.innerHTML = `
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-green-600 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5-7l-3 3.72L9 13l-3 4h12l-4-5z"/>
+                            </svg>
+                            <div>
+                                <div class="font-medium text-gray-900 dark:text-white">${file.name}</div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400">${formatFileSize(file.size)}</div>
+                            </div>
+                        </div>
+                        <button onclick="downloadSingleFile(${index})" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                            </svg>
+                            Download
+                        </button>
+                    `;
+                    resultsList.appendChild(resultItem);
+                });
+            }
+        }
+
+        // Helper function to download single file
+        function downloadSingleFile(index) {
+            const file = processedFiles[index];
+            const url = URL.createObjectURL(file);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = file.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Helper function to handle file selection
+        function handleFileSelect(e, callback) {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                // Validate file types
+                const validFiles = validateFileTypes(files);
+                if (validFiles.length > 0) {
+                    callback(validFiles);
+                    if (validFiles.length < files.length) {
+                        showToast(`⚠️ ${files.length - validFiles.length} files were skipped (invalid format)`, 'warning', 3000);
+                    }
+                } else {
+                    showToast('❌ No valid files selected for this tool', 'error', 3000);
+                }
+            } else {
+                showToast('❌ No files selected', 'warning', 2000);
+            }
+            // Reset input to allow selecting same files again
+            e.target.value = '';
+        }
+        // Validate file types for format converter
+        function validateFileTypes(files) {
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/bmp', 'image/gif'];
+            return files.filter(file => allowedTypes.includes(file.type));
+        }
+
+        // Display file list in the UI
+        function displayFileList(files) {
+            const fileList = document.getElementById('file-list');
+            if (!fileList) return;
+
+            fileList.innerHTML = '';
+            files.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700';
+                fileItem.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <svg class="w-8 h-8 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                        </svg>
+                        <div>
+                            <p class="font-medium text-gray-900 dark:text-gray-100">${file.name}</p>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">${formatFileSize(file.size)}</p>
+                        </div>
+                    </div>
+                    <button onclick="removeFile(${index})" class="text-red-500 hover:text-red-700">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                        </svg>
+                    </button>
+                `;
+                fileList.appendChild(fileItem);
+            });
+
+            // Show file preview section and enable process button
+            const filePreview = document.getElementById('file-preview');
+            const processBtn = document.getElementById('process-btn');
+            
+            if (filePreview) {
+                filePreview.classList.remove('hidden');
+            }
+            if (processBtn) {
+                processBtn.disabled = false;
+            }
+        }
+
+        // Remove file from the list
+        function removeFile(index) {
+            currentFiles.splice(index, 1);
+            if (currentFiles.length === 0) {
+                const filePreview = document.getElementById('file-preview');
+                const processBtn = document.getElementById('process-btn');
+                
+                if (filePreview) {
+                    filePreview.classList.add('hidden');
+                }
+                if (processBtn) {
+                    processBtn.disabled = true;
+                }
+                showToast('📂 All files removed', 'info', 2000);
+            } else {
+                displayFileList(currentFiles);
+                showToast('🗑️ File removed', 'info', 1500);
+            }
+        }
+
+        // Convert images to selected format
+        async function convertImages() {
+            if (currentFiles.length === 0) {
+                showToast('❌ No files to convert', 'warning', 2000);
+                return;
+            }
+
+            processedFiles = [];
+            const convertBtn = document.getElementById('process-btn');
+            const downloadBtn = document.getElementById('download-btn');
+            
+            // Get conversion settings
+            const outputFormat = document.getElementById('output-format').value;
+            const quality = parseInt(document.getElementById('convert-quality').value) / 100; // Convert to 0-1 range
+            
+            if (convertBtn) {
+                convertBtn.disabled = true;
+                convertBtn.textContent = 'Converting...';
+            }
+
+            let totalOriginalSize = 0;
+            let totalConvertedSize = 0;
+
+            try {
+                for (let i = 0; i < currentFiles.length; i++) {
+                    const file = currentFiles[i];
+                    showToast(`🔄 Converting ${file.name} to ${outputFormat.toUpperCase()}... (${i + 1}/${currentFiles.length})`, 'info', 2000);
+                    
+                    const originalSize = file.size;
+                    const convertedFile = await convertImageFormat(file, outputFormat, quality);
+                    const convertedSize = convertedFile.size;
+                    
+                    processedFiles.push(convertedFile);
+                    totalOriginalSize += originalSize;
+                    totalConvertedSize += convertedSize;
+                    
+                    // Update progress
+                    updateProgress((i + 1) / currentFiles.length * 100);
+                }
+
+                // Update conversion stats (reusing display function for sizes)
+                updateCompressionStats(totalOriginalSize, totalConvertedSize);
+
+                showToast(`✅ Successfully converted ${processedFiles.length} images to ${outputFormat.toUpperCase()}!`, 'success', 3000);
+                displayResults();
+                
+                // Show download button
+                if (downloadBtn) {
+                    downloadBtn.classList.remove('hidden');
+                    downloadBtn.disabled = false;
+                }
+                
+            } catch (error) {
+                console.error('Conversion error:', error);
+                showToast('❌ Error during conversion: ' + error.message, 'error', 5000);
+            } finally {
+                if (convertBtn) {
+                    convertBtn.disabled = false;
+                    convertBtn.textContent = 'Convert Images';
+                }
+            }
+        }
+
+        // Convert single image to specified format
+        function convertImageFormat(file, outputFormat, quality) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = function() {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        
+                        // Fill white background for JPEG conversion (no transparency)
+                        if (outputFormat === 'jpeg') {
+                            ctx.fillStyle = '#FFFFFF';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        }
+                        
+                        ctx.drawImage(img, 0, 0);
+                        
+                        // Convert to blob with specified format and quality
+                        canvas.toBlob((blob) => {
+                            if (blob) {
+                                const fileName = getConvertedFileName(file.name, outputFormat);
+                                const convertedFile = new File([blob], fileName, {
+                                    type: blob.type,
+                                    lastModified: Date.now()
+                                });
+                                resolve(convertedFile);
+                            } else {
+                                reject(new Error('Failed to convert image format'));
+                            }
+                        }, getMimeType(outputFormat), quality);
+                        
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                img.onerror = () => reject(new Error('Failed to load image'));
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        // Get MIME type for output format
+        function getMimeType(format) {
+            const mimeTypes = {
+                'jpeg': 'image/jpeg',
+                'png': 'image/png',
+                'webp': 'image/webp',
+                'avif': 'image/avif',
+                'bmp': 'image/bmp'
+            };
+            return mimeTypes[format] || 'image/jpeg';
+        }
+
+        // Generate converted file name
+        function getConvertedFileName(originalName, outputFormat) {
+            const nameWithoutExt = originalName.replace(/\.[^/.]+$/, "");
+            return `${nameWithoutExt}.${outputFormat}`;
+        }
+
+        // Compress individual image (legacy function for compatibility)
+        function compressImage(file, quality = 0.8) {
+            return new Promise((resolve, reject) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+
+                img.onload = function() {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            const compressedFile = new File([blob], file.name, {
+                                type: file.type,
+                                lastModified: Date.now()
+                            });
+                            resolve(compressedFile);
+                        } else {
+                            reject(new Error('Failed to compress image'));
+                        }
+                    }, file.type, quality);
+                };
+
+                img.onerror = () => reject(new Error('Failed to load image'));
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        // Update progress bar
+        function updateProgress(percentage) {
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            
+            if (progressBar) {
+                progressBar.style.width = percentage + '%';
+            }
+            if (progressText) {
+                progressText.textContent = Math.round(percentage) + '%';
+            }
+        }
+
+        // Download all compressed files
+        function downloadAllFiles() {
+            if (processedFiles.length === 0) {
+                showToast('❌ No compressed files to download', 'warning', 2000);
+                return;
+            }
+
+            processedFiles.forEach((file, index) => {
+                setTimeout(() => {
+                    downloadSingleFile(index);
+                }, index * 100); // Stagger downloads
+            });
+
+            showToast(`📥 Downloading ${processedFiles.length} compressed images...`, 'success', 3000);
+        }
+
+        // Display compression results
+        function displayResults() {
+            const resultsSection = document.getElementById('results');
+            const resultsList = document.getElementById('results-list');
+            
+            if (resultsSection && resultsList) {
+                resultsSection.classList.remove('hidden');
+                resultsList.innerHTML = '';
+                
+                processedFiles.forEach((file, index) => {
+                    const originalFile = currentFiles[index];
+                    const originalSize = originalFile.size;
+                    const compressedSize = file.size;
+                    const savedBytes = originalSize - compressedSize;
+                    const savedPercent = ((savedBytes / originalSize) * 100).toFixed(1);
+                    
+                    const resultItem = document.createElement('div');
+                    resultItem.className = 'flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700';
+                    resultItem.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <svg class="w-8 h-8 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M9,16.17L4.83,12L3.41,13.41L9,19L21,7L19.59,5.59L9,16.17Z"/>
+                            </svg>
+                            <div>
+                                <p class="font-medium text-gray-900 dark:text-gray-100">${file.name}</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">
+                                    ${formatFileSize(originalSize)} → ${formatFileSize(compressedSize)} 
+                                    <span class="text-green-600 font-medium">(${savedPercent}% saved)</span>
+                                </p>
+                            </div>
+                        </div>
+                        <button onclick="downloadSingleFile(${index})" class="btn-base btn-sm btn-outline">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                            </svg>
+                            Download
+                        </button>
+                    `;
+                    resultsList.appendChild(resultItem);
+                });
+                
+                // Update overall stats
+                const totalOriginal = currentFiles.reduce((sum, file) => sum + file.size, 0);
+                const totalCompressed = processedFiles.reduce((sum, file) => sum + file.size, 0);
+                updateCompressionStats(totalOriginal, totalCompressed);
+            }
+        }
+
+        // Format file size helper
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Setup file input functionality
+        function setupFileInput() {
+            const fileInput = document.getElementById('file-input');
+            if (fileInput) {
+                fileInput.addEventListener('change', (e) => {
+                    handleFileSelect(e, (files) => {
+                        currentFiles = files;
+                        displayFileList(files);
+                        showToast(`📁 ${files.length} images selected for compression`, 'success', 2000);
+                    });
+                });
+            }
+        }
+
+        // Setup global drag and drop functionality
+        function setupGlobalDragDrop() {
+            const dropZone = document.querySelector('.file-drop-zone');
+            if (dropZone) {
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, preventDefaults, false);
+                    document.body.addEventListener(eventName, preventDefaults, false);
+                });
+
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, highlight, false);
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, unhighlight, false);
+                });
+
+                dropZone.addEventListener('drop', handleDrop, false);
+            }
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            function highlight(e) {
+                dropZone.classList.add('drag-over');
+            }
+
+            function unhighlight(e) {
+                dropZone.classList.remove('drag-over');
+            }
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = Array.from(dt.files);
+                
+                if (files.length > 0) {
+                    const validFiles = validateFileTypes(files);
+                    if (validFiles.length > 0) {
+                        currentFiles = validFiles;
+                        displayFileList(validFiles);
+                        showToast(`📁 ${validFiles.length} images dropped and ready for compression`, 'success', 2000);
+                        if (validFiles.length < files.length) {
+                            showToast(`⚠️ ${files.length - validFiles.length} files were skipped (invalid format)`, 'warning', 3000);
+                        }
+                    } else {
+                        showToast('❌ No valid image files found', 'error', 3000);
+                    }
+                }
+            }
+        }
+
+        // Setup format converter functionality
+        function setupFormatConverter() {
+            // Initialize format conversion interface
+            const convertBtn = document.getElementById('process-btn');
+            if (convertBtn) {
+                convertBtn.addEventListener('click', () => {
+                    if (currentFiles.length === 0) {
+                        showToast('❌ Please select images first', 'warning', 2000);
+                        return;
+                    }
+                    convertImages();
+                });
+            }
+
+            // Setup quality slider
+            const qualitySlider = document.getElementById('convert-quality');
+            const qualityValue = document.getElementById('quality-value');
+            if (qualitySlider && qualityValue) {
+                qualitySlider.addEventListener('input', (e) => {
+                    qualityValue.textContent = e.target.value + '%';
+                });
+            }
+
+            // Setup output format selector
+            const formatSelect = document.getElementById('output-format');
+            if (formatSelect) {
+                formatSelect.addEventListener('change', (e) => {
+                    const selectedFormat = e.target.value;
+                    showToast(`📝 Output format set to ${selectedFormat.toUpperCase()}`, 'info', 2000);
+                });
+            }
+
+            // Setup download functionality
+            const downloadBtn = document.getElementById('download-btn');
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', downloadProcessedFiles);
+            }
+        }
+
+        // Toast system handled by UnifiedToastSystem from script.js
+        
+        // Unified toast system is used
+        
+
+    </script>
+</body>
+</html>
+
+
+

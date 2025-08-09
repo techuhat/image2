@@ -1,0 +1,19 @@
+Flask==3.0.0
+Flask-CORS==4.0.0
+Werkzeug==3.0.1
+
+# PDF Processing Libraries (Azure compatible)
+pdf2docx==0.5.6
+python-docx==1.1.0
+
+# Image Processing Library
+Pillow>=10.0.0
+
+# Production WSGI server for Azure
+gunicorn==21.2.0
+
+# Azure App Service compatibility
+python-dotenv==1.0.0
+
+# Additional dependencies for Azure
+requests>=2.31.0

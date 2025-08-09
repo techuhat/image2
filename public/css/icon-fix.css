@@ -1,0 +1,54 @@
+/* Icon Size Consistency Fix - Fixes large icons after file organization */
+
+/* Tool card icons should all be consistent size */
+.tool-card .w-12.h-12 svg,
+.tool-card svg.w-6.h-6,
+.tool-card svg.w-8.h-8 {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+}
+
+/* Feature card icons should be consistent */
+.feature-card svg.w-6.h-6 {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+}
+
+/* Navigation icons should remain small */
+nav svg.w-5.h-5,
+nav svg.w-4.h-4 {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Arrow icons in tool cards should be smaller */
+.tool-card svg.w-5.h-5 {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Fix any oversized icons in containers */
+.w-16.h-16 svg:not(.hero-icon):not(.large-icon):not(.preview-icon) {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+}
+
+/* Ensure consistent icon sizes across all tool pages */
+.container svg.w-8.h-8:not(.hero-icon):not(.large-icon) {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+}
+
+/* Fix for FontAwesome icons that might be too large */
+.tool-card i.text-lg {
+    font-size: 1.5rem !important;
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 768px) {
+    .tool-card svg,
+    .feature-card svg {
+        width: 1.25rem !important;
+        height: 1.25rem !important;
+    }
+}
