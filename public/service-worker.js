@@ -27,6 +27,7 @@ const STATIC_FILES = [
     '/css/premium-buttons.css',
     '/js/jspdf.min.js',
     '/js/pdf.min.js',
+    '/js/pdf-config.js',
     '/js/pdf.worker.min.js',
     '/js/qrcode.min.js',
     '/js/library-loader.js',
@@ -53,6 +54,7 @@ const STATIC_FILES = [
 const CRITICAL_JS_FILES = [
     '/js/jspdf.min.js',
     '/js/pdf.min.js',
+    '/js/pdf-config.js',
     '/js/pdf.worker.min.js',
     '/js/qrcode.min.js',
     '/js/lib/qrcode.min.js',

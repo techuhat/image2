@@ -574,11 +574,15 @@
     
     <!-- Scripts -->
     <script src="../../../../public/js/pdf.min.js"></script>
+    <script src="../../../../public/js/pdf-config.js"></script>
     <!-- JSZip for multi-file ZIP downloads -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-J3UBbF7l10QmV5uF+Z0aW5E1H3q2u2k8p2U4kq9Q3Z4TtC6oJXw3qY0VYv3r6G6s2x9rN0xgYxZ0Q3r2wKp2eg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
-        // Set pdf.worker.js path for local usage
-        pdfjsLib.GlobalWorkerOptions.workerSrc = '../../../../public/js/pdf.worker.min.js';
+        // PDF.js worker will be automatically configured by pdf-config.js
+        // Fallback configuration for immediate use
+        if (typeof PDFConfig !== 'undefined') {
+            PDFConfig.initWorker();
+        }
     </script>
     <script src="../../../../public/script.js"></script>
     <script>
