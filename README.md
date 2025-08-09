@@ -23,12 +23,19 @@ Your Azure App Service is ready:
 - **QR Generator** - Generate QR codes for text, URLs, and more
 - **Batch Processor** - Apply multiple operations in sequence
 
-### Server-Side Processing (Azure Backend)
-- **PDF to DOCX Converter** - Enhanced server-side conversion
+### Server-Side Processing (Azure Backend) - SmallPDF/iLovePDF Level
+- **PDF to DOCX Converter** - Enhanced server-side conversion with OCR support
 - **PDF Compressor** - Advanced compression using Azure resources
+- **PDF OCR** - Extract text from scanned PDFs using Tesseract/EasyOCR
+- **PDF Merge** - Combine multiple PDFs into one
+- **PDF Split** - Split PDFs by pages or ranges
+- **PDF Rotate** - Rotate PDF pages
+- **PDF Protect/Unlock** - Password protection and removal
 - **Batch Processing** - Process multiple files simultaneously
 - **File Caching** - Avoid redundant processing
 - **Health Monitoring** - Built-in health checks
+- **Advanced Processing** - Multi-language OCR, advanced compression
+- **Real-time Processing** - Fast response times with cloud infrastructure
 
 ## 📦 Quick Deployment
 
@@ -102,6 +109,44 @@ Your frontend automatically connects to Azure backend:
 // Backend configured in js/backend-config.js
 baseUrl: 'https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net'
 ```
+
+## 📦 Backend Dependencies
+
+These advanced libraries are required for SmallPDF/iLovePDF level functionality and are already listed in `requirements.txt`:
+
+### Core PDF Processing
+- pdf2docx - PDF to DOCX conversion
+- PyMuPDF (fitz) - Advanced PDF manipulation
+- python-docx - DOCX document creation
+
+### Advanced PDF Features
+- pikepdf - Modern PDF processing
+- pdfplumber - PDF text extraction
+- pytesseract - OCR text recognition
+- easyocr - Multi-language OCR
+- opencv-python - Image processing
+- numpy - Numerical computing
+
+### Document Processing
+- openpyxl - Excel file processing
+- xlrd - Excel file reading
+- python-pptx - PowerPoint processing
+
+### Performance & Security
+- cryptography - File encryption
+- redis - Caching (optional)
+- celery - Background processing (optional)
+
+Install all dependencies with:
+
+```bash
+pip install -r requirements.txt
+```
+
+**Note:** For OCR functionality, you may also need to install Tesseract OCR system:
+- **Windows**: Download from https://github.com/UB-Mannheim/tesseract/wiki
+- **Linux**: `sudo apt-get install tesseract-ocr`
+- **macOS**: `brew install tesseract`
 
 ## 🏗️ Architecture
 

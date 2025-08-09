@@ -2,11 +2,11 @@
 // This file provides centralized backend configuration for all tools
 
 window.SHARED_BACKEND_CONFIG = {
-    // Azure App Service Production URL 
-    baseUrl: 'https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net',
+    // Backend Configuration - Production Azure URL
+    baseUrl: 'https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net',  // 🌐 AZURE BACKEND
     
     // For local testing, use:
-    // baseUrl: 'http://localhost:5000',
+    // baseUrl: 'http://localhost:5000',           // 🔧 LOCAL BACKEND (all endpoints)
     
     // API Endpoints for different tools
     endpoints: {
@@ -16,14 +16,27 @@ window.SHARED_BACKEND_CONFIG = {
         compressPdf: '/compress-pdf',
         batchProcess: '/batch-process',
         
+        // Advanced PDF Processing
+        pdfOcr: '/pdf-ocr',
+        pdfMerge: '/pdf-merge',
+        pdfSplit: '/pdf-split',
+        pdfRotate: '/pdf-rotate',
+        pdfProtect: '/pdf-protect',
+        pdfUnlock: '/pdf-unlock',
+        
+        // Image Processing
+        compressImage: '/compress-image',
+        imageToPdf: '/image-to-pdf',
+        pdfToImages: '/pdf-to-images',
+        
         // Utility endpoints
         health: '/health',
         ping: '/ping',
         clearCache: '/clear-cache'
     },
     
-    // Configuration limits
-    maxFileSize: 100 * 1024 * 1024, // 100MB
+    // Configuration limits (updated for advanced processing)
+    maxFileSize: 500 * 1024 * 1024, // 500MB for advanced processing
     timeout: 300000, // 5 minutes
     
     // Retry configuration
@@ -32,7 +45,15 @@ window.SHARED_BACKEND_CONFIG = {
     
     // Auto-detection settings
     autoDetectBackend: true,
-    fallbackToClientSide: true
+    fallbackToClientSide: true,
+    
+    // Advanced features configuration
+    features: {
+        ocr: true,
+        advancedCompression: true,
+        batchProcessing: true,
+        multiFormatSupport: true
+    }
 };
 
 // Backend Status Management
@@ -58,6 +79,7 @@ window.BackendStatus = {
                 const healthResponse = await fetch(`${window.SHARED_BACKEND_CONFIG.baseUrl}/health`);
                 if (healthResponse.ok) {
                     this.capabilities = await healthResponse.json();
+                    console.log('Backend capabilities:', this.capabilities);
                 }
                 
                 this.status = 'available';
@@ -82,15 +104,60 @@ window.BackendStatus = {
         return this.capabilities.capabilities && this.capabilities.capabilities[capability];
     },
     
+    // Check if advanced features are available
+    hasAdvancedFeatures() {
+        if (!this.capabilities || this.status !== 'available') {
+            return false;
+        }
+        
+        const advancedFeatures = [
+            'pdf_ocr',
+            'pdf_advanced_processing',
+            'advanced_compression',
+            'batch_processing'
+        ];
+        
+        return advancedFeatures.some(feature => 
+            this.capabilities.capabilities && this.capabilities.capabilities[feature]
+        );
+    },
+    
     // Get status indicator HTML
     getStatusIndicator() {
         const indicators = {
-            'available': '<span class="text-green-600">🟢 Backend Available</span>',
+            'available': '<span class="text-green-600">🟢 Advanced Backend Available</span>',
             'unavailable': '<span class="text-orange-600">🟡 Client-side Only</span>',
             'checking': '<span class="text-blue-600">🔵 Checking...</span>',
             'client-only': '<span class="text-gray-600">⚪ Client-side Mode</span>'
         };
         return indicators[this.status] || indicators['client-only'];
+    },
+    
+    // Get detailed status information
+    getDetailedStatus() {
+        if (!this.capabilities) {
+            return {
+                status: this.status,
+                features: [],
+                version: 'unknown'
+            };
+        }
+        
+        const features = [];
+        if (this.capabilities.capabilities) {
+            if (this.capabilities.capabilities.pdf_to_docx) features.push('PDF→DOCX');
+            if (this.capabilities.capabilities.pdf_ocr) features.push('OCR Processing');
+            if (this.capabilities.capabilities.pdf_advanced_processing) features.push('Advanced PDF');
+            if (this.capabilities.capabilities.advanced_compression) features.push('Advanced Compression');
+            if (this.capabilities.capabilities.batch_processing) features.push('Batch Processing');
+        }
+        
+        return {
+            status: this.status,
+            features: features,
+            version: this.capabilities.version || 'unknown',
+            maxFileSize: this.capabilities.limits?.max_file_size || '100MB'
+        };
     }
 };
 

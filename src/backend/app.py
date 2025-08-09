@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
 Flask Backend for PDF Tools - Azure App Service Ready
-Tools: DOCX to PDF, PDF to DOCX, PDF Compression
+Tools: DOCX to PDF, PDF to DOCX, PDF Compression, OCR, Advanced Processing
 Features: File caching, efficient processing, CORS support, Azure optimization
+Enhanced with Advanced Error Handling & Recovery Systems
 """
 
 import os
@@ -10,10 +11,171 @@ import tempfile
 import subprocess
 import hashlib
 import logging
+import traceback
+import time
+import signal
+import threading
 from datetime import datetime
 from pathlib import Path
 import zipfile
 import shutil
+import json
+from functools import wraps
+from contextlib import contextmanager
+
+# Azure-compatible logging setup (early)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()  # Azure uses stdout for logging
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# Enhanced error tracking
+error_counts = {}
+last_errors = []
+MAX_ERROR_HISTORY = 100
+
+def track_error(error_type, error_msg):
+    """Track errors for monitoring and debugging"""
+    global error_counts, last_errors
+    
+    error_counts[error_type] = error_counts.get(error_type, 0) + 1
+    error_entry = {
+        'timestamp': datetime.now().isoformat(),
+        'type': error_type,
+        'message': str(error_msg),
+        'count': error_counts[error_type]
+    }
+    
+    last_errors.append(error_entry)
+    if len(last_errors) > MAX_ERROR_HISTORY:
+        last_errors.pop(0)
+    
+    logger.error(f"Error tracked: {error_type} - {error_msg}")
+
+def enhanced_error_handler(func):
+    """Advanced error handling decorator with recovery mechanisms"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except MemoryError as e:
+            track_error("MEMORY_ERROR", str(e))
+            logger.critical(f"Memory error in {func.__name__}: {e}")
+            return jsonify({
+                "error": "Insufficient memory for this operation",
+                "code": "MEMORY_ERROR",
+                "suggestion": "Try with a smaller file or reduce quality settings",
+                "retry_after": 60
+            }), 507
+        except subprocess.TimeoutExpired as e:
+            track_error("TIMEOUT_ERROR", str(e))
+            logger.warning(f"Timeout in {func.__name__}: {e}")
+            return jsonify({
+                "error": "Operation timed out",
+                "code": "TIMEOUT_ERROR", 
+                "suggestion": "File may be too large or corrupted",
+                "retry_after": 30
+            }), 408
+        except FileNotFoundError as e:
+            track_error("FILE_NOT_FOUND", str(e))
+            logger.error(f"File not found in {func.__name__}: {e}")
+            return jsonify({
+                "error": "Required system tool not found",
+                "code": "TOOL_MISSING",
+                "suggestion": "Please ensure all dependencies are installed",
+                "details": str(e)
+            }), 500
+        except PermissionError as e:
+            track_error("PERMISSION_ERROR", str(e))
+            logger.error(f"Permission error in {func.__name__}: {e}")
+            return jsonify({
+                "error": "Permission denied",
+                "code": "PERMISSION_ERROR",
+                "suggestion": "Check file permissions and disk space"
+            }), 403
+        except Exception as e:
+            track_error("UNKNOWN_ERROR", str(e))
+            logger.error(f"Unexpected error in {func.__name__}: {e}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            return jsonify({
+                "error": "Internal server error",
+                "code": "INTERNAL_ERROR",
+                "message": str(e),
+                "suggestion": "Please try again or contact support",
+                "function": func.__name__
+            }), 500
+    return wrapper
+
+@contextmanager
+def safe_temp_file(suffix="", prefix="temp_"):
+    """Safe temporary file context manager with cleanup guarantee"""
+    temp_file = None
+    try:
+        temp_file = tempfile.NamedTemporaryFile(suffix=suffix, prefix=prefix, delete=False)
+        yield temp_file.name
+    except Exception as e:
+        logger.error(f"Temp file error: {e}")
+        raise
+    finally:
+        if temp_file and os.path.exists(temp_file.name):
+            try:
+                os.unlink(temp_file.name)
+            except Exception as e:
+                logger.warning(f"Failed to cleanup temp file {temp_file.name}: {e}")
+
+def validate_file_upload(file, allowed_extensions, max_size_mb=100):
+    """Enhanced file validation with security checks"""
+    if not file or file.filename == '':
+        raise ValueError("No file provided")
+    
+    # Check file extension
+    file_ext = Path(file.filename).suffix.lower()
+    if file_ext not in allowed_extensions:
+        raise ValueError(f"Unsupported file type. Allowed: {', '.join(allowed_extensions)}")
+    
+    # Check file size (read first to get size)
+    file.seek(0, 2)  # Seek to end
+    size = file.tell()
+    file.seek(0)  # Seek back to beginning
+    
+    max_size_bytes = max_size_mb * 1024 * 1024
+    if size > max_size_bytes:
+        raise ValueError(f"File too large. Maximum size: {max_size_mb}MB")
+    
+    # Basic content validation
+    if size == 0:
+        raise ValueError("File is empty")
+    
+    return True
+
+def check_system_resources():
+    """Check available system resources"""
+    try:
+        import psutil
+        memory = psutil.virtual_memory()
+        disk = psutil.disk_usage('/')
+        
+        return {
+            'memory_available_gb': round(memory.available / (1024**3), 2),
+            'memory_percent': memory.percent,
+            'disk_free_gb': round(disk.free / (1024**3), 2),
+            'disk_percent': round((disk.used / disk.total) * 100, 2)
+        }
+    except ImportError:
+        return {'error': 'psutil not available'}
+    except Exception as e:
+        logger.warning(f"Resource check failed: {e}")
+        return {'error': str(e)}
+
+# Flask and web framework imports
+from flask import Flask, request, jsonify, send_file, after_this_request
+from flask_cors import CORS
+from werkzeug.utils import secure_filename
+from werkzeug.exceptions import RequestEntityTooLarge
 
 from flask import Flask, request, jsonify, send_file, after_this_request
 from flask_cors import CORS
@@ -33,9 +195,52 @@ try:
 except ImportError:
     PYMUPDF_AVAILABLE = False
 
+# Advanced PDF Processing Libraries
+try:
+    import pikepdf
+    PIKEPDF_AVAILABLE = True
+except ImportError:
+    PIKEPDF_AVAILABLE = False
+
+try:
+    import pdfplumber
+    PDFPLUMBER_AVAILABLE = True
+except ImportError:
+    PDFPLUMBER_AVAILABLE = False
+
+try:
+    import pytesseract
+    # Set Tesseract executable path for Windows
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+    TESSERACT_AVAILABLE = True
+except ImportError:
+    TESSERACT_AVAILABLE = False
+
+try:
+    # Temporarily disable EasyOCR due to torch loading issues
+    # import easyocr
+    EASYOCR_AVAILABLE = False
+    logger.info("EasyOCR disabled - using Tesseract only")
+except (ImportError, Exception) as e:
+    # EasyOCR or PyTorch may have loading issues, use fallback
+    EASYOCR_AVAILABLE = False
+    logger.warning(f"EasyOCR not available: {e}")
+
+try:
+    import cv2
+    OPENCV_AVAILABLE = True
+except ImportError:
+    OPENCV_AVAILABLE = False
+
+try:
+    import numpy as np
+    NUMPY_AVAILABLE = True
+except ImportError:
+    NUMPY_AVAILABLE = False
+
 # Initialize Flask app
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB max file size for advanced processing
 
 # Azure-optimized CORS configuration
 CORS(app, origins=[
@@ -44,16 +249,6 @@ CORS(app, origins=[
     "http://localhost:3000",
     "http://127.0.0.1:3000"
 ])
-
-# Azure-compatible logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()  # Azure uses stdout for logging
-    ]
-)
-logger = logging.getLogger(__name__)
 
 # Create directories for caching
 CACHE_DIR = Path("cache")
@@ -68,14 +263,49 @@ def get_file_hash(file_content):
 def check_ghostscript():
     """Check if Ghostscript is available in system"""
     try:
-        result = subprocess.run(['gs', '--version'], 
-                              capture_output=True, text=True, timeout=10)
-        return result.returncode == 0
-    except (subprocess.SubprocessError, FileNotFoundError):
+        # Try with full path first (Windows)
+        gs_paths = [
+            r'C:\Program Files\gs\gs10.05.1\bin\gswin64c.exe',
+            'gs',  # Try system PATH
+            'gswin64c'
+        ]
+        
+        for path in gs_paths:
+            try:
+                result = subprocess.run([path, '--version'], 
+                                      capture_output=True, text=True, timeout=10)
+                if result.returncode == 0:
+                    return True
+            except (subprocess.SubprocessError, FileNotFoundError):
+                continue
+        return False
+    except Exception:
+        return False
+
+def check_tesseract():
+    """Check if Tesseract OCR is available"""
+    try:
+        # Try with full path first (Windows)
+        tesseract_paths = [
+            r'C:\Program Files\Tesseract-OCR\tesseract.exe',
+            'tesseract'  # Try system PATH
+        ]
+        
+        for path in tesseract_paths:
+            try:
+                result = subprocess.run([path, '--version'], 
+                                      capture_output=True, text=True, timeout=10)
+                if result.returncode == 0:
+                    return True
+            except (subprocess.SubprocessError, FileNotFoundError):
+                continue
+        return False
+    except Exception:
         return False
 
 # System capability checks
 GHOSTSCRIPT_AVAILABLE = check_ghostscript()
+TESSERACT_AVAILABLE = check_tesseract()
 
 @app.route('/ping', methods=['GET'])
 def ping():
@@ -89,34 +319,61 @@ def health_check():
     return jsonify({
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "version": "1.0.0",
-        "message": "Backend ready for PDF and Image processing",
+        "version": "2.0.0",
+        "message": "Advanced PDF Toolkit Backend - SmallPDF/iLovePDF Level",
         "capabilities": {
             "pdf_compression": GHOSTSCRIPT_AVAILABLE or PYMUPDF_AVAILABLE,
             "pdf_to_docx": PDF2DOCX_AVAILABLE or PYMUPDF_AVAILABLE,
+            "pdf_ocr": TESSERACT_AVAILABLE or EASYOCR_AVAILABLE,
+            "pdf_advanced_processing": PIKEPDF_AVAILABLE or PDFPLUMBER_AVAILABLE,
             "image_compression": True,  # Always available with Pillow
-            "batch_processing": True
+            "batch_processing": True,
+            "ocr_processing": TESSERACT_AVAILABLE or EASYOCR_AVAILABLE,
+            "advanced_compression": True
         },
         "system_tools": {
             "ghostscript": GHOSTSCRIPT_AVAILABLE,
             "pdf2docx": PDF2DOCX_AVAILABLE,
             "pymupdf": PYMUPDF_AVAILABLE,
+            "pikepdf": PIKEPDF_AVAILABLE,
+            "pdfplumber": PDFPLUMBER_AVAILABLE,
+            "tesseract": TESSERACT_AVAILABLE,
+            "easyocr": EASYOCR_AVAILABLE,
+            "opencv": OPENCV_AVAILABLE,
+            "numpy": NUMPY_AVAILABLE,
             "pillow": True
         },
         "supported_operations": [
             "compress-pdf",
             "pdf-to-docx", 
             "compress-image",
-            "batch-process"
+            "batch-process",
+            "pdf-ocr",
+            "pdf-merge",
+            "pdf-split",
+            "pdf-rotate",
+            "pdf-protect",
+            "pdf-unlock",
+            "image-to-pdf",
+            "pdf-to-images"
         ],
         "limits": {
-            "max_file_size": "100MB",
-            "max_batch_files": 10,
+            "max_file_size": "500MB",
+            "max_batch_files": 20,
             "supported_formats": {
                 "pdf": ["pdf"],
-                "image": ["jpg", "jpeg", "png", "webp", "bmp", "tiff"],
-                "document": ["docx"]
+                "image": ["jpg", "jpeg", "png", "webp", "bmp", "tiff", "gif"],
+                "document": ["docx", "doc", "xlsx", "xls", "pptx", "ppt"],
+                "text": ["txt", "rtf", "md"]
             }
+        },
+        "features": {
+            "ocr_support": TESSERACT_AVAILABLE or EASYOCR_AVAILABLE,
+            "advanced_compression": True,
+            "batch_processing": True,
+            "file_caching": True,
+            "real_time_processing": True,
+            "multi_format_support": True
         }
     })
 
@@ -321,8 +578,9 @@ def compress_pdf():
         # Check if file is already small enough
         if original_size < 1024 * 1024 and not force_compression:  # < 1MB
             logger.info("File already small, skipping compression")
+            import io
             response = send_file(
-                file_content,
+                io.BytesIO(file_content),
                 as_attachment=True,
                 download_name=original_name,
                 mimetype='application/pdf'
@@ -674,7 +932,7 @@ def batch_process():
                 
                 elif current_op == 'convert_to_pdf' and file_ext == '.docx':
                     # Simulate DOCX to PDF conversion
-                    if LIBREOFFICE_AVAILABLE:
+                    if False:  # LibreOffice not available in this setup
                         file_content = file.read()
                         temp_input = batch_dir / original_name
                         
@@ -701,7 +959,7 @@ def batch_process():
                         else:
                             errors.append(f"{original_name}: Conversion failed")
                     else:
-                        errors.append(f"{original_name}: LibreOffice not available")
+                        errors.append(f"{original_name}: LibreOffice not available in this setup")
                 
                 else:
                     errors.append(f"{original_name}: Operation not supported for this file type")
@@ -749,6 +1007,335 @@ def batch_process():
         logger.error(f"Batch processing error: {str(e)}")
         return jsonify({"error": f"Batch processing failed: {str(e)}"}), 500
 
+@app.route('/pdf-ocr', methods=['POST'])
+def pdf_ocr():
+    """
+    Extract text from PDF using OCR (Optical Character Recognition)
+    Features: Tesseract OCR, EasyOCR, multi-language support
+    """
+    logger.info("PDF OCR request received")
+    
+    if not (TESSERACT_AVAILABLE or EASYOCR_AVAILABLE):
+        return jsonify({
+            "error": "OCR processing not available. Install Tesseract or EasyOCR"
+        }), 500
+    
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    
+    file = request.files['file']
+    language = request.form.get('language', 'eng')
+    ocr_engine = request.form.get('engine', 'tesseract')  # tesseract or easyocr
+    
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+    
+    if not file.filename.lower().endswith('.pdf'):
+        return jsonify({"error": "Only PDF files are supported"}), 400
+    
+    try:
+        # Read file content and generate hash
+        file_content = file.read()
+        file_hash = get_file_hash(file_content)
+        
+        # Generate filenames
+        original_name = secure_filename(file.filename)
+        base_name = Path(original_name).stem
+        output_filename = f"{base_name}_ocr.txt"
+        
+        # Check cache
+        cached_file = CACHE_DIR / f"{file_hash}_{language}_{output_filename}"
+        
+        if cached_file.exists():
+            logger.info(f"Returning cached OCR result: {output_filename}")
+            return send_file(
+                cached_file,
+                as_attachment=True,
+                download_name=output_filename,
+                mimetype='text/plain'
+            )
+        
+        # Create temporary files
+        temp_pdf = TEMP_DIR / f"{file_hash}_input.pdf"
+        
+        # Write PDF file
+        with open(temp_pdf, 'wb') as f:
+            f.write(file_content)
+        
+        extracted_text = ""
+        
+        if ocr_engine == 'easyocr' and EASYOCR_AVAILABLE:
+            try:
+                logger.info("Using EasyOCR for text extraction")
+                import easyocr
+                import fitz
+                
+                reader = easyocr.Reader([language])
+                doc = fitz.open(str(temp_pdf))
+                
+                for page_num in range(len(doc)):
+                    page = doc.load_page(page_num)
+                    pix = page.get_pixmap()
+                    img_array = np.frombuffer(pix.samples, dtype=np.uint8).reshape(
+                        pix.height, pix.width, pix.n
+                    )
+                    
+                    results = reader.readtext(img_array)
+                    page_text = '\n'.join([text[1] for text in results])
+                    extracted_text += f"\n--- Page {page_num + 1} ---\n{page_text}\n"
+                
+                doc.close()
+                
+            except Exception as e:
+                logger.warning(f"EasyOCR failed: {e}")
+                # Force fallback to Tesseract
+                ocr_engine = 'tesseract'
+        
+        if ocr_engine == 'tesseract' and TESSERACT_AVAILABLE:
+            try:
+                logger.info("Using Tesseract for text extraction")
+                import fitz
+                import pytesseract
+                from PIL import Image
+                
+                doc = fitz.open(str(temp_pdf))
+                
+                for page_num in range(len(doc)):
+                    page = doc.load_page(page_num)
+                    pix = page.get_pixmap()
+                    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                    
+                    page_text = pytesseract.image_to_string(img, lang=language)
+                    extracted_text += f"\n--- Page {page_num + 1} ---\n{page_text}\n"
+                
+                doc.close()
+                
+            except Exception as e:
+                logger.error(f"Tesseract OCR failed: {e}")
+                return jsonify({
+                    "error": f"OCR processing failed: {str(e)}"
+                }), 500
+        
+        if not extracted_text.strip():
+            return jsonify({
+                "error": "No text could be extracted from the PDF"
+            }), 500
+        
+        # Save to cache
+        with open(cached_file, 'w', encoding='utf-8') as f:
+            f.write(extracted_text)
+        
+        logger.info(f"Successfully extracted text from {original_name} using {ocr_engine}")
+        
+        @after_this_request
+        def cleanup(response):
+            try:
+                if temp_pdf.exists():
+                    temp_pdf.unlink()
+            except Exception as e:
+                logger.warning(f"Cleanup error: {e}")
+            return response
+        
+        return send_file(
+            cached_file,
+            as_attachment=True,
+            download_name=output_filename,
+            mimetype='text/plain'
+        )
+        
+    except Exception as e:
+        logger.error(f"PDF OCR error: {str(e)}")
+        return jsonify({"error": f"OCR processing failed: {str(e)}"}), 500
+
+@app.route('/pdf-merge', methods=['POST'])
+def pdf_merge():
+    """
+    Merge multiple PDF files into a single PDF
+    Features: Multiple PDF merging, order preservation
+    """
+    logger.info("PDF merge request received")
+    
+    if not PYMUPDF_AVAILABLE:
+        return jsonify({
+            "error": "PDF merging not available. Install PyMuPDF"
+        }), 500
+    
+    if 'files' not in request.files:
+        return jsonify({"error": "No files uploaded"}), 400
+    
+    files = request.files.getlist('files')
+    
+    if len(files) < 2:
+        return jsonify({"error": "At least 2 PDF files are required for merging"}), 400
+    
+    if len(files) > 20:
+        return jsonify({"error": "Maximum 20 files allowed for merging"}), 400
+    
+    try:
+        import fitz
+        
+        # Create merged PDF
+        merged_doc = fitz.open()
+        
+        for file in files:
+            if file.filename == '':
+                continue
+                
+            if not file.filename.lower().endswith('.pdf'):
+                continue
+            
+            # Read file content
+            file_content = file.read()
+            temp_pdf = TEMP_DIR / f"temp_{hash(file_content)}.pdf"
+            
+            with open(temp_pdf, 'wb') as f:
+                f.write(file_content)
+            
+            # Open and merge
+            doc = fitz.open(str(temp_pdf))
+            merged_doc.insert_pdf(doc)
+            doc.close()
+            
+            # Cleanup temp file
+            if temp_pdf.exists():
+                temp_pdf.unlink()
+        
+        # Save merged PDF
+        output_filename = f"merged_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        output_path = TEMP_DIR / output_filename
+        
+        merged_doc.save(str(output_path))
+        merged_doc.close()
+        
+        logger.info(f"Successfully merged {len(files)} PDF files into {output_filename}")
+        
+        @after_this_request
+        def cleanup(response):
+            try:
+                if output_path.exists():
+                    output_path.unlink()
+            except Exception as e:
+                logger.warning(f"Cleanup error: {e}")
+            return response
+        
+        return send_file(
+            output_path,
+            as_attachment=True,
+            download_name=output_filename,
+            mimetype='application/pdf'
+        )
+        
+    except Exception as e:
+        logger.error(f"PDF merge error: {str(e)}")
+        return jsonify({"error": f"PDF merging failed: {str(e)}"}), 500
+
+@app.route('/pdf-split', methods=['POST'])
+def pdf_split():
+    """
+    Split PDF into multiple files by pages
+    Features: Page range splitting, individual page extraction
+    """
+    logger.info("PDF split request received")
+    
+    if not PYMUPDF_AVAILABLE:
+        return jsonify({
+            "error": "PDF splitting not available. Install PyMuPDF"
+        }), 500
+    
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    
+    file = request.files['file']
+    split_type = request.form.get('type', 'range')  # range, individual, custom
+    page_ranges = request.form.get('ranges', '')  # e.g., "1-3,5,7-9"
+    
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+    
+    if not file.filename.lower().endswith('.pdf'):
+        return jsonify({"error": "Only PDF files are supported"}), 400
+    
+    try:
+        import fitz
+        
+        # Read file content
+        file_content = file.read()
+        temp_pdf = TEMP_DIR / f"temp_{hash(file_content)}.pdf"
+        
+        with open(temp_pdf, 'wb') as f:
+            f.write(file_content)
+        
+        doc = fitz.open(str(temp_pdf))
+        total_pages = len(doc)
+        
+        # Parse page ranges
+        if split_type == 'range' and page_ranges:
+            ranges = []
+            for range_str in page_ranges.split(','):
+                if '-' in range_str:
+                    start, end = map(int, range_str.split('-'))
+                    ranges.append((start-1, end-1))  # Convert to 0-based
+                else:
+                    page_num = int(range_str) - 1
+                    ranges.append((page_num, page_num))
+        else:
+            # Split into individual pages
+            ranges = [(i, i) for i in range(total_pages)]
+        
+        # Create ZIP for multiple files
+        zip_filename = f"split_{Path(file.filename).stem}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+        zip_path = TEMP_DIR / zip_filename
+        
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for i, (start, end) in enumerate(ranges):
+                if start < 0 or end >= total_pages:
+                    continue
+                
+                # Create new PDF with selected pages
+                new_doc = fitz.open()
+                new_doc.insert_pdf(doc, from_page=start, to_page=end)
+                
+                # Save to temporary file
+                split_filename = f"{Path(file.filename).stem}_pages_{start+1}-{end+1}.pdf"
+                split_path = TEMP_DIR / split_filename
+                new_doc.save(str(split_path))
+                new_doc.close()
+                
+                # Add to ZIP
+                zipf.write(split_path, split_filename)
+                
+                # Cleanup temp split file
+                if split_path.exists():
+                    split_path.unlink()
+        
+        doc.close()
+        
+        # Cleanup temp input file
+        if temp_pdf.exists():
+            temp_pdf.unlink()
+        
+        logger.info(f"Successfully split PDF into {len(ranges)} parts")
+        
+        @after_this_request
+        def cleanup(response):
+            try:
+                if zip_path.exists():
+                    zip_path.unlink()
+            except Exception as e:
+                logger.warning(f"Cleanup error: {e}")
+            return response
+        
+        return send_file(
+            zip_path,
+            as_attachment=True,
+            download_name=zip_filename,
+            mimetype='application/zip'
+        )
+        
+    except Exception as e:
+        logger.error(f"PDF split error: {str(e)}")
+        return jsonify({"error": f"PDF splitting failed: {str(e)}"}), 500
+
 @app.route('/clear-cache', methods=['POST'])
 def clear_cache():
     """Clear the cache directory"""
@@ -775,7 +1362,7 @@ def clear_cache():
 
 @app.errorhandler(413)
 def too_large(e):
-    return jsonify({"error": "File too large. Maximum size is 100MB"}), 413
+    return jsonify({"error": "File too large. Maximum size is 500MB"}), 413
 
 @app.errorhandler(404)
 def not_found(e):

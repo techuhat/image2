@@ -6,8 +6,36 @@ Werkzeug==3.0.1
 pdf2docx==0.5.6
 python-docx==1.1.0
 
-# Image Processing Library
+# Advanced PDF Processing (SmallPDF/iLovePDF level)
+PyMuPDF>=1.23.0
+reportlab>=4.0.0
+pypdf2>=3.0.0
+pikepdf>=8.0.0
+pdfplumber>=0.9.0
+pytesseract>=0.3.10
+opencv-python>=4.8.0
+numpy>=1.24.0
+
+# OCR and Text Processing
+easyocr>=1.7.0
+pytesseract>=0.3.10
+langdetect>=1.0.9
+
+# Image Processing and Enhancement
 Pillow>=10.0.0
+Pillow-SIMD>=9.0.0
+imageio>=2.31.0
+imageio-ffmpeg>=0.4.8
+
+# Document Processing
+python-docx>=1.1.0
+openpyxl>=3.1.0
+xlrd>=2.0.1
+python-pptx>=0.6.21
+
+# Compression and Optimization
+zlib-state>=1.2.13
+lz4>=4.3.0
 
 # Production WSGI server for Azure
 gunicorn==21.2.0
@@ -17,6 +45,13 @@ python-dotenv==1.0.0
 
 # Additional dependencies for Azure
 requests>=2.31.0
+aiofiles>=23.2.0
+asyncio-throttle>=1.0.2
 
-# PyMuPDF for PDF processing (added for better functionality)
-PyMuPDF>=1.23.0
+# Security and Validation
+cryptography>=41.0.0
+python-magic>=0.4.27
+
+# Performance and Caching
+redis>=5.0.0
+celery>=5.3.0

@@ -2087,6 +2087,45 @@
                     </div>
                 </div>
                 
+                <!-- PDF OCR Tool -->
+                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='src/frontend/tools/pdf-tools/pdf-ocr.html'">
+                    <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center mb-4 shadow-md">
+                        <svg class="w-6 h-6 text-white dark:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2 text-gray-900 dark:text-white">PDF OCR</h3>
+                    <p class="text-gray-600 dark:text-gray-300 mb-4">Extract text from scanned PDFs using OCR</p>
+                    <div class="flex items-center text-green-600 dark:text-green-400 font-medium group">
+                        <span>Get Started</span>
+                        <svg class="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M13.2 12l-7.9 7.9 1.4 1.4 9.3-9.3-9.3-9.3-1.4 1.4z"/></svg>
+                    </div>
+                </div>
+                
+                <!-- PDF Merge Tool -->
+                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='src/frontend/tools/pdf-tools/pdf-merge.html'">
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mb-4 shadow-md">
+                        <svg class="w-6 h-6 text-white dark:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2 text-gray-900 dark:text-white">PDF Merge</h3>
+                    <p class="text-gray-600 dark:text-gray-300 mb-4">Combine multiple PDFs into one document</p>
+                    <div class="flex items-center text-blue-600 dark:text-blue-400 font-medium group">
+                        <span>Get Started</span>
+                        <svg class="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M13.2 12l-7.9 7.9 1.4 1.4 9.3-9.3-9.3-9.3-1.4 1.4z"/></svg>
+                    </div>
+                </div>
+                
+                <!-- PDF Split Tool -->
+                <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='src/frontend/tools/pdf-tools/pdf-split.html'">
+                    <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center mb-4 shadow-md">
+                        <svg class="w-6 h-6 text-white dark:text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2 text-gray-900 dark:text-white">PDF Split</h3>
+                    <p class="text-gray-600 dark:text-gray-300 mb-4">Split PDFs by pages or custom ranges</p>
+                    <div class="flex items-center text-orange-600 dark:text-orange-400 font-medium group">
+                        <span>Get Started</span>
+                        <svg class="w-5 h-5 ml-2 transition-transform group-hover:translate-x-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M13.2 12l-7.9 7.9 1.4 1.4 9.3-9.3-9.3-9.3-1.4 1.4z"/></svg>
+                    </div>
+                </div>
+                
                 <!-- QR Code Generator Tool -->
                 <div class="tool-card bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-xl" onclick="window.location.href='src/frontend/tools/utility-tools/qr-generator.html'">
                     <div class="w-12 h-12 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-lg flex items-center justify-center mb-4 shadow-md">
@@ -2136,6 +2175,9 @@
                         <li><a href="src/frontend/tools/utility-tools/batch-processor.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Batch Processor</a></li>
                         <li><a href="src/frontend/tools/pdf-tools/pdf-to-doc.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">PDF to DOC</a></li>
                         <li><a href="src/frontend/tools/pdf-tools/pdf-compressor.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">PDF Compressor</a></li>
+                        <li><a href="src/frontend/tools/pdf-tools/pdf-ocr.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">PDF OCR</a></li>
+                        <li><a href="src/frontend/tools/pdf-tools/pdf-merge.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">PDF Merge</a></li>
+                        <li><a href="src/frontend/tools/pdf-tools/pdf-split.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">PDF Split</a></li>
                         <li><a href="src/frontend/tools/utility-tools/qr-generator.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">QR Code Generator</a></li>
                     </ul>
                 </div>

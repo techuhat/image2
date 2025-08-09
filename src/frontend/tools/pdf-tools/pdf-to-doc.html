@@ -677,7 +677,7 @@
             </div>
             <div class="grid md:grid-cols-2 gap-4">
                 <!-- Client-side Mode -->
-                <div class="conversion-mode-card bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-blue-200 dark:border-blue-700 cursor-pointer transition-all hover:border-blue-400 dark:hover:border-blue-500" onclick="selectConversionMode('client')">
+                <div class="conversion-mode-card bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-600 cursor-pointer transition-all hover:border-blue-400 dark:hover:border-blue-500" onclick="selectConversionMode('client')">
                     <div class="flex items-center mb-3">
                         <input type="radio" id="client-mode" name="conversion-mode" value="client" checked class="mr-3">
                         <label for="client-mode" class="text-lg font-semibold text-gray-900 dark:text-white cursor-pointer">Client-side Processing</label>
@@ -705,7 +705,7 @@
                 </div>
                 
                 <!-- Server-side Mode -->
-                <div class="conversion-mode-card bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-600 cursor-pointer transition-all hover:border-purple-400 dark:hover:border-purple-500" onclick="selectConversionMode('server')">
+                <div class="conversion-mode-card bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-purple-200 dark:border-purple-700 cursor-pointer transition-all hover:border-purple-400 dark:hover:border-purple-500 ring-2 ring-purple-300 dark:ring-purple-600" onclick="selectConversionMode('server')">
                     <div class="flex items-center mb-3">
                         <input type="radio" id="server-mode" name="conversion-mode" value="server" class="mr-3">
                         <label for="server-mode" class="text-lg font-semibold text-gray-900 dark:text-white cursor-pointer">Server Processing</label>
@@ -867,7 +867,7 @@
                         <li><a href="format-converter.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Format Converter</a></li>
                         <li><a href="batch-processor.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Batch Processor</a></li>
                         <li><a href="pdf-to-doc.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">PDF to DOC</a></li>
-                        <li><a href="qr-generator.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">QR Code Generator</a></li>
+                        <li><a href="../utility-tools/qr-generator.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">QR Code Generator</a></li>
                     </ul>
                 </div>
                 
@@ -972,7 +972,7 @@
         let currentFiles = [];
         let processedFiles = [];
         let currentTool = 'pdf-to-doc';
-        let conversionMode = 'client'; // 'client' or 'server'
+        let conversionMode = 'server'; // 'client' or 'server' - Default to server for real DOCX conversion
         
         // Configuration for different deployment modes
         const DEPLOYMENT_MODE = 'WITH_BACKEND'; // Options: 'CLIENT_ONLY', 'WITH_BACKEND', 'RENDER'
@@ -986,9 +986,13 @@
             
             endpoints: {
                 convert: '/pdf-to-docx',
-                health: '/health'
+                health: '/health',
+                ocr: '/pdf-ocr',
+                merge: '/pdf-merge',
+                split: '/pdf-split',
+                compress: '/compress-pdf'
             },
-            maxFileSize: 100 * 1024 * 1024, // 100MB
+            maxFileSize: 500 * 1024 * 1024, // 500MB for advanced processing
             timeout: 300000 // 5 minutes
         };
         
@@ -1303,8 +1307,15 @@
                         showToast('🔧 Backend server unavailable. Client-side mode provides instant, private processing.', 'info', 6000);
                     }
                 } else {
-                    updateBackendStatus('available', 'Both modes available');
-                    showToast('🌟 Both client-side and server-side processing available!', 'success', 4000);
+                    // If backend supports PDF→DOCX, default to server mode for real DOCX output
+                    if (healthCheck.features && healthCheck.features.pdfToDocx) {
+                        conversionMode = 'server';
+                        selectConversionMode('server');
+                        updateBackendStatus('available', 'Server-side conversion available');
+                        showToast('🌟 Server-side PDF→DOCX available. Switched to Server Processing.', 'success', 4000);
+                    } else {
+                        updateBackendStatus('client-only', 'Client-side processing only');
+                    }
                 }
             } else {
                 updateBackendStatus('client-only', 'Client-side processing only');
@@ -1329,9 +1340,21 @@
                 
                 if (response.ok) {
                     const data = await response.json();
-                    return { 
-                        available: true, 
-                        data: data 
+                    const pdfToDocxCap = !!(data && data.capabilities && data.capabilities.pdf_to_docx);
+                    const advancedFeatures = !!(data && data.capabilities && (
+                        data.capabilities.pdf_ocr || 
+                        data.capabilities.pdf_advanced_processing || 
+                        data.capabilities.advanced_compression
+                    ));
+                    
+                    return {
+                        available: pdfToDocxCap,
+                        data: data,
+                        features: { 
+                            pdfToDocx: pdfToDocxCap,
+                            advancedFeatures: advancedFeatures
+                        },
+                        reason: pdfToDocxCap ? undefined : 'feature_unavailable'
                     };
                 } else {
                     return { 
@@ -1433,7 +1456,7 @@
                     break;
                 case 'available':
                     dot.className = 'w-2 h-2 bg-green-500 rounded-full mr-2';
-                    text.textContent = message || 'Server available';
+                    text.textContent = message || 'Advanced Backend Available';
                     break;
                 case 'unavailable':
                     dot.className = 'w-2 h-2 bg-red-500 rounded-full mr-2';
@@ -1888,27 +1911,27 @@ Text extraction quality depends on the original PDF format. Scanned PDFs may req
             
             // Server-side conversion (advanced functionality)
             async convertFilesServerSide() {
-                showProgress(true, 'Uploading files to server...');
+                showProgress(true, 'Uploading files to advanced server...');
                 
                 try {
-                    // Check if backend is available
+                    // Check if backend is available with advanced features
                     const isBackendAvailable = await this.checkBackendHealth();
                     if (!isBackendAvailable) {
-                        throw new Error('Backend service is not available. Please try client-side mode or contact support.');
+                        throw new Error('Advanced backend service is not available. Please try client-side mode or contact support.');
                     }
                     
                     const results = [];
                     
                     for (let i = 0; i < this.files.length; i++) {
                         const file = this.files[i];
-                        updateProgress(((i + 1) / this.files.length) * 80, `Processing ${file.name} on server...`);
+                        updateProgress(((i + 1) / this.files.length) * 80, `Processing ${file.name} with advanced server...`);
                         
                         try {
-                            // Upload and convert file
-                            const result = await this.uploadAndConvertFile(file);
+                            // Upload and convert file with advanced processing
+                            const result = await this.uploadAndConvertFileAdvanced(file);
                             results.push(result);
                             
-                            showToast(`✅ Converted: ${file.name}`, 'success', 2000);
+                            showToast(`✅ Advanced conversion completed: ${file.name}`, 'success', 2000);
                             
                         } catch (fileError) {
                             console.error(`Error processing ${file.name}:`, fileError);
@@ -1916,7 +1939,7 @@ Text extraction quality depends on the original PDF format. Scanned PDFs may req
                         }
                     }
                     
-                    updateProgress(100, 'All files processed successfully!');
+                    updateProgress(100, 'All files processed with advanced features!');
                     
                     if (results.length > 0) {
                         // Download all converted files
@@ -1925,12 +1948,12 @@ Text extraction quality depends on the original PDF format. Scanned PDFs may req
                     }
                     
                 } catch (error) {
-                    console.error('Server-side processing error:', error);
+                    console.error('Advanced server-side processing error:', error);
                     
                     // Show detailed error message
-                    let errorMessage = 'Server conversion failed';
+                    let errorMessage = 'Advanced server conversion failed';
                     if (error.message.includes('not available')) {
-                        errorMessage = 'Backend server is currently not available';
+                        errorMessage = 'Advanced backend server is currently not available';
                     } else if (error.message.includes('timeout')) {
                         errorMessage = 'Server response timeout';
                     } else if (error.message.includes('network')) {
@@ -1952,6 +1975,46 @@ Text extraction quality depends on the original PDF format. Scanned PDFs may req
                 } finally {
                     showProgress(false);
                 }
+            }
+            
+            // Advanced file upload and conversion
+            async uploadAndConvertFileAdvanced(file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                // Add advanced processing options
+                formData.append('advanced', 'true');
+                formData.append('ocr', 'auto'); // Auto-detect if OCR is needed
+                
+                const response = await fetch(`${BACKEND_CONFIG.baseUrl}${BACKEND_CONFIG.endpoints.convert}`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        // Don't set Content-Type header, let browser set it for FormData
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.detail || `Advanced server error: ${response.status}`);
+                }
+                
+                // Get the DOCX file directly
+                const blob = await response.blob();
+                const fileName = file.name.replace(/\.pdf$/i, '.docx');
+                
+                return {
+                    originalName: file.name,
+                    convertedName: fileName,
+                    blob: blob,
+                    features: {
+                        textExtracted: true,
+                        serverProcessed: true,
+                        formatPreserved: true,
+                        advancedProcessing: true,
+                        ocrApplied: response.headers.get('X-OCR-Applied') === 'true'
+                    }
+                };
             }
             
             // Check backend health
@@ -1991,40 +2054,6 @@ Text extraction quality depends on the original PDF format. Scanned PDFs may req
                     
                     return false;
                 }
-            }
-            
-            // Upload and convert single file
-            async uploadAndConvertFile(file) {
-                const formData = new FormData();
-                formData.append('file', file);
-                
-                const response = await fetch(`${BACKEND_CONFIG.baseUrl}${BACKEND_CONFIG.endpoints.convert}`, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        // Don't set Content-Type header, let browser set it for FormData
-                    }
-                });
-                
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.detail || `Server error: ${response.status}`);
-                }
-                
-                // Get the DOCX file directly
-                const blob = await response.blob();
-                const fileName = file.name.replace(/\.pdf$/i, '.docx');
-                
-                return {
-                    originalName: file.name,
-                    convertedName: fileName,
-                    blob: blob,
-                    features: {
-                        textExtracted: true,
-                        serverProcessed: true,
-                        formatPreserved: true
-                    }
-                };
             }
             
             // Download converted files

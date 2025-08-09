@@ -206,15 +206,12 @@
         }
         
         .file-drop-zone {
-            background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(109, 40, 217, 0.1));
-            border: 2px dashed var(--primary-color);
             transition: all 0.3s ease;
         }
         
         .file-drop-zone.drag-over {
-            background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(109, 40, 217, 0.2));
-            border-color: var(--primary-hover);
-            transform: scale(1.02);
+            border-color: #3b82f6 !important;
+            background-color: rgba(59, 130, 246, 0.1);
         }
         
         .compression-preview {
@@ -480,29 +477,23 @@
         <!-- Tool Interface -->
         <section class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-8">
             <div class="mb-8">
-                <!-- File Upload Zone -->
-                <div class="file-drop-zone rounded-xl p-8 text-center mb-6" id="drop-zone">
-                    <div class="max-w-md mx-auto">
-                        <div class="w-20 h-20 bg-gradient-to-br from-purple-100 to-violet-100 dark:from-purple-900 dark:to-violet-900 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-10 h-10 text-purple-600 dark:text-purple-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5-7l-3 3.72L9 13l-3 4h12l-4-5z"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                            Drop images here
+                <!-- File Upload Area -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
+                    <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-blue-400 transition-colors" id="drop-zone">
+                        <i class="fas fa-image text-4xl text-gray-400 mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                            Upload Images for Format Conversion
                         </h3>
-                        <p class="text-gray-600 dark:text-gray-400 mb-4">
-                            or click to browse files
+                        <p class="text-gray-500 dark:text-gray-400 mb-4">
+                            Drag and drop multiple images here, or click to browse
                         </p>
                         <input type="file" id="file-input" multiple accept="image/*" class="hidden">
-                        <button onclick="document.getElementById('file-input').click()" class="btn-base btn-secondary btn-lg">
-                            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5-7l-3 3.72L9 13l-3 4h12l-4-5z"/>
-                            </svg>
+                        <button onclick="document.getElementById('file-input').click()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                            <i class="fas fa-upload mr-2"></i>
                             Choose Images
                         </button>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-4">
-                            Supports JPG, PNG, WebP, AVIF and more formats
+                        <p class="text-sm text-gray-400 mt-2">
+                            Supports JPG, PNG, WebP, AVIF, BMP formats
                         </p>
                     </div>
                 </div>
@@ -666,13 +657,13 @@
                     <h4 class="font-semibold mb-4">Tools</h4>
                     <ul class="space-y-2 text-gray-400">
                         <li><a href="image-to-pdf.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Image to PDF</a></li>
-                        <li><a href="pdf-to-images.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">PDF to Images</a></li>
+                        <li><a href="../pdf-tools/pdf-to-images.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">PDF to Images</a></li>
                         <li><a href="image-compressor.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Image Compressor</a></li>
                         <li><a href="image-resizer.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Image Resizer</a></li>
                         <li><a href="format-converter.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Format Converter</a></li>
-                        <li><a href="batch-processor.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Batch Processor</a></li>
-                        <li><a href="pdf-to-doc.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">PDF to DOC</a></li>
-                        <li><a href="qr-generator.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">QR Code Generator</a></li>
+                        <li><a href="../utility-tools/batch-processor.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">Batch Processor</a></li>
+                        <li><a href="../pdf-tools/pdf-to-doc.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">PDF to DOC</a></li>
+                        <li><a href="../utility-tools/qr-generator.html" class="hover:text-white transition-colors cursor-pointer hover:translate-x-1 transform duration-200 inline-block">QR Code Generator</a></li>
                     </ul>
                 </div>
                 
@@ -1166,7 +1157,7 @@
 
         // Setup global drag and drop functionality
         function setupGlobalDragDrop() {
-            const dropZone = document.querySelector('.file-drop-zone');
+            const dropZone = document.getElementById('drop-zone');
             if (dropZone) {
                 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
                     dropZone.addEventListener(eventName, preventDefaults, false);
