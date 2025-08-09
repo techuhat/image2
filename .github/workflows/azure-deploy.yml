@@ -1,0 +1,88 @@
+name: Deploy to Azure App Service (Custom)
+
+on:
+  # Disabled to avoid conflict with main_imagetool.yml
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'src/backend/**'
+  #     - '.github/workflows/azure-deploy.yml'
+  workflow_dispatch:  # Manual trigger only
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 🚀 Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: 🐍 Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: 📦 Install Dependencies
+      run: |
+        cd src/backend
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: 🧪 Test Backend
+      run: |
+        cd src/backend
+        python -c "from app import app; print('✅ Flask app imports successfully')"
+        python -c "import pdf2docx, fitz, PIL; print('✅ All libraries imported')"
+        
+    - name: 📁 Prepare Deployment Files
+      run: |
+        mkdir -p deployment-package
+        cp -r src/backend/* deployment-package/
+        
+        # Create web.config for Azure
+        cat > deployment-package/web.config << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <system.webServer>
+            <handlers>
+              <add name="PythonHandler" path="*" verb="*" modules="httpPlatformHandler" resourceType="Unspecified"/>
+            </handlers>
+            <httpPlatform processPath="python" arguments="startup.py" stdoutLogEnabled="true" stdoutLogFile=".\logs\python.log" startupTimeLimit="60" requestTimeout="604800">
+              <environmentVariables>
+                <environmentVariable name="PYTHONPATH" value="." />
+              </environmentVariables>
+            </httpPlatform>
+          </system.webServer>
+        </configuration>
+        EOF
+        
+    - name: 🌐 Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: 'imagetool'
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: './deployment-package'
+        
+    - name: ✅ Test Deployment
+      run: |
+        echo "⏳ Waiting for deployment to complete..."
+        sleep 60
+        
+        echo "🧪 Testing backend endpoints..."
+        
+        # Test ping endpoint
+        if curl -f -s "https://imagetool.azurewebsites.net/ping" > /dev/null; then
+          echo "✅ Ping endpoint working"
+        else
+          echo "❌ Ping endpoint failed"
+        fi
+        
+        # Test health endpoint
+        if curl -f -s "https://imagetool.azurewebsites.net/health" > /dev/null; then
+          echo "✅ Health endpoint working"
+        else
+          echo "❌ Health endpoint failed"
+        fi
+        
+        echo "🎉 Deployment testing complete!"
