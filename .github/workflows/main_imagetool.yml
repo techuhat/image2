@@ -34,7 +34,6 @@ jobs:
       - name: Install dependencies
         run: |
           source venv/bin/activate
-          cd src/backend
           pip install -r requirements.txt
         
       - name: Test Backend Application
@@ -46,9 +45,11 @@ jobs:
 
       - name: Prepare deployment package
         run: |
-          # Copy only backend files for deployment
+          # Copy backend files for deployment
           mkdir -p deployment-package
           cp -r src/backend/* deployment-package/
+          # Copy requirements.txt from root to deployment package
+          cp requirements.txt deployment-package/
           
           # Create web.config for Azure App Service
           cat > deployment-package/web.config << 'EOF'
