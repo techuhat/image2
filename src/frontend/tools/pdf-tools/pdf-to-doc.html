@@ -905,6 +905,25 @@
     <script src="../../../../public/js/pdf-config.js"></script>
     <script src="../../../../public/script.js?v=2.3.1"></script>
     <script>
+        // Emergency circuit breaker to prevent infinite loops
+        let errorCount = 0;
+        const MAX_ERRORS = 10;
+        
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+            errorCount++;
+            if (errorCount > MAX_ERRORS) {
+                console.warn('Emergency: Too many errors, suppressing further error logging');
+                return;
+            }
+            originalConsoleError.apply(console, args);
+        };
+        
+        // Reset error count after a delay
+        setTimeout(() => {
+            errorCount = 0;
+        }, 5000);
+        
         // Add comprehensive error handling to prevent null reference errors
         function safeGetElement(selector, byId = false) {
             try {
@@ -919,51 +938,15 @@
             }
         }
         
-        // Global error boundary to catch all classList errors
-        function createErrorBoundary() {
-            // Override console.error to catch classList errors
-            const originalError = console.error;
-            console.error = function(...args) {
-                const message = args.join(' ');
-                if (message.includes('classList') || message.includes('Cannot read properties of null')) {
-                    console.warn('Caught classList error, preventing crash:', ...args);
-                    // Add to error manager if available
-                    if (typeof ErrorManager !== 'undefined') {
-                        ErrorManager.addError(
-                            new Error('DOM Element Access Error: ' + message), 
-                            'Safe Error Boundary', 
-                            'warning'
-                        );
-                    }
-                    return; // Don't propagate the error
-                }
-                originalError.apply(console, args);
-            };
-            
-            // Global Promise rejection handler
-            window.addEventListener('unhandledrejection', function(event) {
-                const reason = event.reason;
-                if (reason && (reason.message || reason.toString()).includes('classList')) {
-                    console.warn('Caught Promise rejection for classList error:', reason);
-                    event.preventDefault(); // Prevent the error from being logged
-                    
-                    // Add to error manager if available
-                    if (typeof ErrorManager !== 'undefined') {
-                        ErrorManager.addError(
-                            reason, 
-                            'Promise Rejection', 
-                            'warning'
-                        );
-                    }
-                }
-            });
-        }
-        
-        // Initialize error boundary immediately
-        createErrorBoundary();
-        
-        // Safe classList operations
+        // Safe classList operations with circuit breaker
+        let classListOpCount = 0;
         function safeClassListOperation(element, operation, className) {
+            classListOpCount++;
+            if (classListOpCount > 100) {
+                console.warn('Too many classList operations, stopping to prevent infinite loop');
+                return false;
+            }
+            
             if (element && element.classList && typeof element.classList[operation] === 'function') {
                 try {
                     if (Array.isArray(className)) {
@@ -973,12 +956,17 @@
                     }
                     return true;
                 } catch (error) {
-                    console.warn(`classList ${operation} failed:`, error);
+                    console.warn(`classList ${operation} failed:`, error.message);
                     return false;
                 }
             }
             return false;
         }
+        
+        // Reset counter periodically
+        setInterval(() => {
+            classListOpCount = 0;
+        }, 1000);
         
         // Global variables for file handling
         let currentFiles = [];
@@ -1007,41 +995,66 @@
         // Auto-disable server mode if backend not available
         let serverModeAvailable = DEPLOYMENT_MODE !== 'CLIENT_ONLY';
         
-        // Error Management System
+        // Error Management System - Fixed to prevent recursion
         const ErrorManager = {
             errors: [],
+            isProcessingError: false, // Prevent recursive calls
             
             // Add an error to the collection
             addError(error, context = '', severity = 'error') {
-                const errorObj = {
-                    id: Date.now() + Math.random(),
-                    message: error.message || error.toString(),
-                    context: context,
-                    severity: severity,
-                    timestamp: new Date(),
-                    stack: error.stack || ''
-                };
+                // Prevent recursive error processing
+                if (this.isProcessingError) {
+                    console.warn('Prevented recursive error processing:', error.message);
+                    return null;
+                }
                 
-                this.errors.push(errorObj);
-                console.error(`[${severity.toUpperCase()}] ${context}:`, error);
-                this.displayErrors();
+                this.isProcessingError = true;
                 
-                return errorObj.id;
+                try {
+                    const errorObj = {
+                        id: Date.now() + Math.random(),
+                        message: error.message || error.toString(),
+                        context: context,
+                        severity: severity,
+                        timestamp: new Date(),
+                        stack: error.stack || ''
+                    };
+                    
+                    this.errors.push(errorObj);
+                    
+                    // Simple console logging without triggering more errors
+                    console.warn(`[${severity.toUpperCase()}] ${context}: ${errorObj.message}`);
+                    
+                    // Only display errors if not in processing state
+                    setTimeout(() => {
+                        this.displayErrors();
+                    }, 0);
+                    
+                    return errorObj.id;
+                } catch (processingError) {
+                    console.error('Error in ErrorManager.addError:', processingError);
+                    return null;
+                } finally {
+                    this.isProcessingError = false;
+                }
             },
             
             // Clear all errors
             clearErrors() {
+                if (this.isProcessingError) return;
+                
                 this.errors = [];
                 this.hideErrorDisplay();
             },
             
             // Display errors in the UI
             displayErrors() {
+                if (this.isProcessingError) return;
+                
                 const errorDisplay = document.getElementById('error-display');
                 const errorList = document.getElementById('error-list');
                 
                 if (!errorDisplay || !errorList) {
-                    console.warn('Error display elements not found');
                     return;
                 }
                 
@@ -1204,13 +1217,25 @@
                 ErrorManager.clearErrors();
                 StatusManager.hideStatus();
                 
-                // Setup global error handling
+                // Setup global error handling - simplified to prevent recursion
                 window.addEventListener('error', (e) => {
-                    ErrorManager.addError(e.error || new Error(e.message), 'Global Error', 'error');
+                    const message = e.message || '';
+                    if (!message.includes('ErrorManager') && !message.includes('Safe Error Boundary')) {
+                        console.warn('Global error caught:', e.message);
+                        // Don't add to ErrorManager to prevent recursion
+                    }
                 });
                 
                 window.addEventListener('unhandledrejection', (e) => {
-                    ErrorManager.addError(e.reason || new Error('Unhandled Promise Rejection'), 'Promise Rejection', 'error');
+                    const reason = e.reason || {};
+                    const message = reason.message || reason.toString();
+                    if (!message.includes('ErrorManager') && !message.includes('Safe Error Boundary')) {
+                        console.warn('Promise rejection caught:', message);
+                        // Prevent error from propagating if it's a classList error
+                        if (message.includes('classList') || message.includes('Cannot read properties of null')) {
+                            e.preventDefault();
+                        }
+                    }
                 });
                 
             } catch (initError) {
