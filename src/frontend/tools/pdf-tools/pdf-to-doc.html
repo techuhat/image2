@@ -901,6 +901,29 @@
     <script src="../../../../public/js/pdf-config.js"></script>
     <script src="../../../../public/script.js?v=2.3.1"></script>
     <script>
+        // Add comprehensive error handling to prevent null reference errors
+        function safeGetElement(selector, byId = false) {
+            try {
+                const element = byId ? document.getElementById(selector) : document.querySelector(selector);
+                if (!element) {
+                    console.warn(`Element not found: ${selector}`);
+                }
+                return element;
+            } catch (error) {
+                console.error(`Error getting element ${selector}:`, error);
+                return null;
+            }
+        }
+        
+        // Safe classList operations
+        function safeClassListOperation(element, operation, className) {
+            if (element && element.classList && typeof element.classList[operation] === 'function') {
+                element.classList[operation](className);
+                return true;
+            }
+            return false;
+        }
+        
         // Global variables for file handling
         let currentFiles = [];
         let processedFiles = [];
@@ -961,6 +984,11 @@
                 const errorDisplay = document.getElementById('error-display');
                 const errorList = document.getElementById('error-list');
                 
+                if (!errorDisplay || !errorList) {
+                    console.warn('Error display elements not found');
+                    return;
+                }
+                
                 if (this.errors.length === 0) {
                     this.hideErrorDisplay();
                     return;
@@ -1016,13 +1044,17 @@
                 }
                 
                 errorList.innerHTML = html;
-                errorDisplay.classList.remove('hidden');
+                if (errorDisplay) {
+                    errorDisplay.classList.remove('hidden');
+                }
             },
             
             // Hide error display
             hideErrorDisplay() {
                 const errorDisplay = document.getElementById('error-display');
-                errorDisplay.classList.add('hidden');
+                if (errorDisplay) {
+                    errorDisplay.classList.add('hidden');
+                }
             },
             
             // Sanitize error messages for display
@@ -1045,6 +1077,11 @@
                 const statusTitle = document.getElementById('status-title');
                 const statusMessage = document.getElementById('status-message');
                 
+                if (!statusContainer || !statusIcon || !statusTitle || !statusMessage) {
+                    console.warn('Status display elements not found');
+                    return;
+                }
+                
                 statusTitle.textContent = title;
                 statusMessage.textContent = message;
                 
@@ -1063,44 +1100,70 @@
             // Hide conversion status
             hideStatus() {
                 const statusContainer = document.getElementById('conversion-status');
-                statusContainer.classList.add('hidden');
+                if (statusContainer) {
+                    statusContainer.classList.add('hidden');
+                }
             },
             
             // Update status message only
             updateMessage(message) {
                 const statusMessage = document.getElementById('status-message');
-                statusMessage.textContent = message;
+                if (statusMessage) {
+                    statusMessage.textContent = message;
+                }
             }
         };
         
         // Initialize theme and file handling
-        initTheme();
+        if (typeof initTheme === 'function') {
+            initTheme();
+        } else {
+            console.warn('initTheme function not available');
+        }
         
         // Initialize file handling using standardized functions from script.js
         document.addEventListener('DOMContentLoaded', async function() {
-            setupFileInput();
-            setupGlobalDragDrop();
-            
-            // Setup error management event listeners
-            const dismissErrorsBtn = document.getElementById('dismiss-errors');
-            if (dismissErrorsBtn) {
-                dismissErrorsBtn.addEventListener('click', () => {
-                    ErrorManager.clearErrors();
+            try {
+                if (typeof setupFileInput === 'function') {
+                    setupFileInput();
+                } else {
+                    console.warn('setupFileInput function not available');
+                }
+                
+                if (typeof setupGlobalDragDrop === 'function') {
+                    setupGlobalDragDrop();
+                } else {
+                    console.warn('setupGlobalDragDrop function not available');
+                }
+                
+                // Setup error management event listeners
+                const dismissErrorsBtn = safeGetElement('dismiss-errors', true);
+                if (dismissErrorsBtn) {
+                    dismissErrorsBtn.addEventListener('click', () => {
+                        ErrorManager.clearErrors();
+                    });
+                }
+                
+                // Clear any existing errors on page load
+                ErrorManager.clearErrors();
+                StatusManager.hideStatus();
+                
+                // Setup global error handling
+                window.addEventListener('error', (e) => {
+                    ErrorManager.addError(e.error || new Error(e.message), 'Global Error', 'error');
                 });
+                
+                window.addEventListener('unhandledrejection', (e) => {
+                    ErrorManager.addError(e.reason || new Error('Unhandled Promise Rejection'), 'Promise Rejection', 'error');
+                });
+                
+            } catch (initError) {
+                console.error('Error during initialization:', initError);
+                // Fallback error display without dependencies
+                if (typeof showToast === 'function') {
+                    showToast('⚠️ Some features may not work properly due to initialization errors', 'warning', 5000);
+                }
             }
-            
-            // Clear any existing errors on page load
-            ErrorManager.clearErrors();
-            StatusManager.hideStatus();
-            
-            // Setup global error handling
-            window.addEventListener('error', (e) => {
-                ErrorManager.addError(e.error || new Error(e.message), 'Global Error', 'error');
-            });
-            
-            window.addEventListener('unhandledrejection', (e) => {
-                ErrorManager.addError(e.reason || new Error('Unhandled Promise Rejection'), 'Promise Rejection', 'error');
-            });
             
             // Check backend availability on page load and auto-disable server mode if needed
             if (conversionMode === 'server' || serverModeAvailable) {
@@ -1234,8 +1297,8 @@
             if (healthCheck.available) {
                 // Re-enable server mode
                 serverModeAvailable = true;
-                const serverModeCard = document.querySelector('[onclick="selectConversionMode(\'server\')"]');
-                const serverRadio = document.getElementById('server-mode');
+                const serverModeCard = safeGetElement('[onclick="selectConversionMode(\'server\')"]');
+                const serverRadio = safeGetElement('server-mode', true);
                 
                 if (serverModeCard) {
                     serverModeCard.style.opacity = '1';
@@ -1248,10 +1311,14 @@
                 }
                 
                 // Remove retry button
-                retryButton.parentElement.remove();
+                if (retryButton.parentElement) {
+                    retryButton.parentElement.remove();
+                }
                 
                 updateBackendStatus('available', 'Server reconnected');
-                showToast('🎉 Backend server connection restored! Server-side processing now available.', 'success', 5000);
+                if (typeof showToast === 'function') {
+                    showToast('🎉 Backend server connection restored! Server-side processing now available.', 'success', 5000);
+                }
                 
             } else {
                 retryButton.disabled = false;
@@ -1259,17 +1326,24 @@
                 
                 const reason = healthCheck.reason === 'timeout' ? 'Connection timeout' : 'Server unavailable';
                 updateBackendStatus('unavailable', reason);
-                showToast(`❌ ${reason}. Server-side processing still unavailable.`, 'error', 4000);
+                if (typeof showToast === 'function') {
+                    showToast(`❌ ${reason}. Server-side processing still unavailable.`, 'error', 4000);
+                }
             }
         };
         
         // Update backend status indicator
         function updateBackendStatus(status, message) {
-            const statusElement = document.getElementById('backend-status');
+            const statusElement = safeGetElement('backend-status', true);
             if (!statusElement) return;
             
             const dot = statusElement.querySelector('div');
             const text = statusElement.querySelector('span');
+            
+            if (!dot || !text) {
+                console.warn('Backend status components not found');
+                return;
+            }
             
             switch (status) {
                 case 'checking':
@@ -1294,8 +1368,11 @@
         // Conversion mode selection
         function selectConversionMode(mode) {
             conversionMode = mode;
-            document.getElementById('client-mode').checked = mode === 'client';
-            document.getElementById('server-mode').checked = mode === 'server';
+            const clientRadio = document.getElementById('client-mode');
+            const serverRadio = document.getElementById('server-mode');
+            
+            if (clientRadio) clientRadio.checked = mode === 'client';
+            if (serverRadio) serverRadio.checked = mode === 'server';
             
             // Update UI based on selected mode
             updateModeUI(mode);
@@ -1307,16 +1384,24 @@
         function updateModeUI(mode) {
             const cards = document.querySelectorAll('.conversion-mode-card');
             cards.forEach(card => {
-                card.classList.remove('border-blue-400', 'border-purple-400', 'bg-blue-50', 'bg-purple-50');
-                card.classList.add('border-gray-200');
+                if (card) {
+                    card.classList.remove('border-blue-400', 'border-purple-400', 'bg-blue-50', 'bg-purple-50');
+                    card.classList.add('border-gray-200');
+                }
             });
             
             if (mode === 'client') {
-                document.querySelector('[onclick="selectConversionMode(\'client\')"]').classList.add('border-blue-400', 'bg-blue-50');
-                document.querySelector('[onclick="selectConversionMode(\'client\')"]').classList.remove('border-gray-200');
+                const clientCard = document.querySelector('[onclick="selectConversionMode(\'client\')"]');
+                if (clientCard) {
+                    clientCard.classList.add('border-blue-400', 'bg-blue-50');
+                    clientCard.classList.remove('border-gray-200');
+                }
             } else {
-                document.querySelector('[onclick="selectConversionMode(\'server\')"]').classList.add('border-purple-400', 'bg-purple-50');
-                document.querySelector('[onclick="selectConversionMode(\'server\')"]').classList.remove('border-gray-200');
+                const serverCard = document.querySelector('[onclick="selectConversionMode(\'server\')"]');
+                if (serverCard) {
+                    serverCard.classList.add('border-purple-400', 'bg-purple-50');
+                    serverCard.classList.remove('border-gray-200');
+                }
             }
         }
         
@@ -1343,11 +1428,20 @@
             }
             
             setupEventListeners() {
-                const fileInput = document.getElementById('file-input');
-                const convertBtn = document.getElementById('process-btn');
+                const fileInput = safeGetElement('file-input', true);
+                const convertBtn = safeGetElement('process-btn', true);
                 
-                fileInput.addEventListener('change', (e) => this.handleFileSelect(e.target.files));
-                convertBtn.addEventListener('click', () => this.convertFiles());
+                if (fileInput) {
+                    fileInput.addEventListener('change', (e) => this.handleFileSelect(e.target.files));
+                } else {
+                    console.error('File input not found');
+                }
+                
+                if (convertBtn) {
+                    convertBtn.addEventListener('click', () => this.convertFiles());
+                } else {
+                    console.error('Convert button not found');
+                }
             }
             
             handleFileSelect(fileList) {
@@ -1379,6 +1473,11 @@
             
             updateFileList() {
                 const fileList = document.getElementById('file-list');
+                if (!fileList) {
+                    console.warn('File list element not found');
+                    return;
+                }
+                
                 fileList.innerHTML = '';
                 
                 this.files.forEach((file, index) => {
@@ -1415,7 +1514,9 @@
             
             updateConvertButton() {
                 const convertBtn = document.getElementById('process-btn');
-                convertBtn.disabled = this.files.length === 0;
+                if (convertBtn) {
+                    convertBtn.disabled = this.files.length === 0;
+                }
             }
             
             async convertFiles() {
@@ -1924,8 +2025,18 @@ For best results, try our Server processing mode for real PDF conversion!\\f0\\f
             }
         }
         
-        // Initialize converter
-        const pdfConverter = new PDFToDOCConverter();
+        // Initialize converter with error handling
+        let pdfConverter;
+        try {
+            pdfConverter = new PDFToDOCConverter();
+            console.log('PDF to DOC converter initialized successfully');
+        } catch (converterError) {
+            console.error('Error initializing PDF converter:', converterError);
+            // Fallback: still allow basic functionality
+            pdfConverter = {
+                removeFile: function(index) { console.warn('Converter not properly initialized'); }
+            };
+        }
         
         // Debug logging
         console.log('PDF to DOC tool initialized successfully');
@@ -1934,7 +2045,7 @@ For best results, try our Server processing mode for real PDF conversion!\\f0\\f
         console.log('Progress system:', typeof showProgress);
         
         // Setup theme toggle
-        const themeToggle = document.getElementById('dn');
+        const themeToggle = safeGetElement('dn', true);
         if (themeToggle) {
             console.log('Theme toggle found:', themeToggle);
             
