@@ -54,7 +54,7 @@ GET /ping - Returns "pong" for quick health check
 - **App Name**: imagetool
 - **Resource Group**: imagetool_group
 - **Plan**: B1 (Basic)
-- **URL**: https://imagetool.azurewebsites.net
+- **URL**: https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net
 
 ### 2. Deploy Your Code
 ```powershell
@@ -63,8 +63,8 @@ GET /ping - Returns "pong" for quick health check
 
 ### 3. Test Deployment
 ```bash
-curl https://imagetool.azurewebsites.net/health
-curl https://imagetool.azurewebsites.net/ping
+curl https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/health
+curl https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/ping
 ```
 
 ## 📝 Important Notes

@@ -52,7 +52,7 @@ az webapp deployment list-publishing-profiles --name imagetool --resource-group 
 - ✅ Endpoints tested
 
 ### Azure में:
-- **URL**: https://imagetool.azurewebsites.net/health
+- **URL**: https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/health
 - **Status**: Should return backend capabilities
 - **Logs**: Azure Portal → App Service → Log stream
 
@@ -84,10 +84,10 @@ After successful deployment:
 
 ```bash
 # These should work:
-https://imagetool.azurewebsites.net/ping          # Returns "pong"
-https://imagetool.azurewebsites.net/health        # Returns capabilities
-https://imagetool.azurewebsites.net/pdf-to-docx   # PDF conversion endpoint
-https://imagetool.azurewebsites.net/compress-pdf  # PDF compression endpoint
+https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/ping          # Returns "pong"
+https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/health        # Returns capabilities
+https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/pdf-to-docx   # PDF conversion endpoint
+https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/compress-pdf  # PDF compression endpoint
 ```
 
 ## 🐛 Troubleshooting
@@ -107,7 +107,7 @@ https://imagetool.azurewebsites.net/compress-pdf  # PDF compression endpoint
 # Azure Portal → imagetool → Log stream
 
 # Test endpoints manually
-curl https://imagetool.azurewebsites.net/health
+curl https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/health
 ```
 
 ## 🎉 Next Steps

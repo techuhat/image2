@@ -16,7 +16,7 @@
 // API Configuration for Backend Integration
 const API_CONFIG = {
     // Azure App Service Production URL (consistent with backend-config.js)
-    BASE_URL: 'https://imagetool.azurewebsites.net',
+    BASE_URL: 'https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net',
     ENDPOINTS: {
         HEALTH: '/health',
         CAPABILITIES: '/capabilities',

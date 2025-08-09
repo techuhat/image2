@@ -110,14 +110,14 @@ jobs:
           echo "🧪 Testing backend endpoints..."
           
           # Test ping endpoint
-          if curl -f -s "https://imagetool.azurewebsites.net/ping" > /dev/null; then
+          if curl -f -s "https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/ping" > /dev/null; then
             echo "✅ Ping endpoint working"
           else
             echo "❌ Ping endpoint failed"
           fi
           
           # Test health endpoint
-          if curl -f -s "https://imagetool.azurewebsites.net/health" > /dev/null; then
+          if curl -f -s "https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/health" > /dev/null; then
             echo "✅ Health endpoint working"
           else
             echo "❌ Health endpoint failed"

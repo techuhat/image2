@@ -11,7 +11,7 @@ Your Azure deployment is successful! Here are the details:
 - **Subscription**: Azure for Students
 - **Plan**: B1 (Basic)
 - **Python Version**: 3.10
-- **App URL**: https://imagetool.azurewebsites.net
+- **App URL**: https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net
 - **Deployment Time**: 8/8/2025, 4:58:59 PM
 
 ## 🚀 Features
@@ -42,15 +42,15 @@ Your Azure deployment is successful! Here are the details:
 
 ### 2. Test Your Backend
 Once deployed, test these endpoints:
-- **Health Check**: https://imagetool.azurewebsites.net/health
-- **Ping**: https://imagetool.azurewebsites.net/ping
-- **PDF to DOCX**: https://imagetool.azurewebsites.net/pdf-to-docx
+- **Health Check**: https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/health
+- **Ping**: https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/ping
+- **PDF to DOCX**: https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/pdf-to-docx
 
 ### 3. Frontend Configuration
 The frontend is already configured for Azure:
 ```javascript
 // In js/backend-config.js
-baseUrl: 'https://imagetool.azurewebsites.net'
+baseUrl: 'https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net'
 ```
 
 ## 🎯 Azure-Specific Benefits
@@ -90,13 +90,13 @@ After uploading your code, test these endpoints:
 
 ```bash
 # Health check (should return detailed status)
-curl https://imagetool.azurewebsites.net/health
+curl https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/health
 
 # Simple ping test
-curl https://imagetool.azurewebsites.net/ping
+curl https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/ping
 
 # Test PDF to DOCX conversion
-curl -X POST https://imagetool.azurewebsites.net/pdf-to-docx \
+curl -X POST https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/pdf-to-docx \
   -F "file=@your-test.pdf"
 ```
 
@@ -118,7 +118,7 @@ az account set --subscription "Azure for Students"
 ## 📱 Frontend Integration
 
 Your frontend will automatically connect to the Azure backend. The configuration has been updated to use:
-- **Production URL**: https://imagetool.azurewebsites.net
+- **Production URL**: https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net
 - **Auto-detection**: Backend availability checking
 - **Fallback**: Client-side processing if backend unavailable
 

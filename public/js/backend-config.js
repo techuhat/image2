@@ -3,7 +3,7 @@
 
 window.SHARED_BACKEND_CONFIG = {
     // Azure App Service Production URL 
-    baseUrl: 'https://imagetool.azurewebsites.net',
+    baseUrl: 'https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net',
     
     // For local testing, use:
     // baseUrl: 'http://localhost:5000',

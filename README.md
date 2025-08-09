@@ -10,7 +10,7 @@ Your Azure App Service is ready:
 - **Subscription**: Azure for Students
 - **Plan**: B1 (Basic)
 - **Python Version**: 3.10
-- **App URL**: https://imagetool.azurewebsites.net
+- **App URL**: https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net
 
 ## 🚀 Features
 
@@ -41,8 +41,8 @@ Your Azure App Service is ready:
 ### Step 2: Test Your Backend
 ```bash
 # Test endpoints
-curl https://imagetool.azurewebsites.net/health
-curl https://imagetool.azurewebsites.net/ping
+curl https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/health
+curl https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/ping
 ```
 
 ## 🎯 Azure Benefits
@@ -91,16 +91,16 @@ curl https://imagetool.azurewebsites.net/ping
 ## 🧪 Testing Your Deployment
 
 After deployment, your endpoints will be:
-- **Health Check**: https://imagetool.azurewebsites.net/health
-- **Ping Test**: https://imagetool.azurewebsites.net/ping
-- **PDF to DOCX**: https://imagetool.azurewebsites.net/pdf-to-docx
+- **Health Check**: https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/health
+- **Ping Test**: https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/ping
+- **PDF to DOCX**: https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net/pdf-to-docx
 
 ## 📱 Frontend Integration
 
 Your frontend automatically connects to Azure backend:
 ```javascript
 // Backend configured in js/backend-config.js
-baseUrl: 'https://imagetool.azurewebsites.net'
+baseUrl: 'https://imagetool-h4dmewahfmg4bkej.eastasia-01.azurewebsites.net'
 ```
 
 ## 🏗️ Architecture
