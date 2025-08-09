@@ -1,13 +1,14 @@
-name: Deploy to Azure App Service
+name: Deploy to Azure App Service (Custom)
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'src/backend/**'
-      - '.github/workflows/azure-deploy.yml'
-  workflow_dispatch:  # Manual trigger
+  # Disabled to avoid conflict with main_imagetool.yml
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'src/backend/**'
+  #     - '.github/workflows/azure-deploy.yml'
+  workflow_dispatch:  # Manual trigger only
 
 jobs:
   deploy:
