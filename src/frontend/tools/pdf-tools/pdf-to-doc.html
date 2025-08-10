@@ -722,7 +722,7 @@
                             <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                             </svg>
-                            <span>Advanced Text + Images + OCR</span>
+                            <span>Advanced Text + Images</span>
                         </div>
                         <div class="flex items-center mb-2">
                             <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -987,7 +987,6 @@
             endpoints: {
                 convert: '/pdf-to-docx',
                 health: '/health',
-                ocr: '/pdf-ocr',
                 merge: '/pdf-merge',
                 split: '/pdf-split',
                 compress: '/compress-pdf'
@@ -1342,7 +1341,6 @@
                     const data = await response.json();
                     const pdfToDocxCap = !!(data && data.capabilities && data.capabilities.pdf_to_docx);
                     const advancedFeatures = !!(data && data.capabilities && (
-                        data.capabilities.pdf_ocr || 
                         data.capabilities.pdf_advanced_processing || 
                         data.capabilities.advanced_compression
                     ));
@@ -1902,7 +1900,7 @@ For better formatting and image support, try the Server processing mode.\\par\\p
 
 ${metadata.hasImages ? 'Note: Images were detected but cannot be embedded in client-side mode. Use Server mode for image support.\\par\\par' : ''}
 
-Text extraction quality depends on the original PDF format. Scanned PDFs may require OCR processing.\\i0\\fs24\\par
+Text extraction quality depends on the original PDF format.\\i0\\fs24\\par
 
 }`;
 
@@ -1984,7 +1982,6 @@ Text extraction quality depends on the original PDF format. Scanned PDFs may req
                 
                 // Add advanced processing options
                 formData.append('advanced', 'true');
-                formData.append('ocr', 'auto'); // Auto-detect if OCR is needed
                 
                 const response = await fetch(`${BACKEND_CONFIG.baseUrl}${BACKEND_CONFIG.endpoints.convert}`, {
                     method: 'POST',
@@ -2011,8 +2008,7 @@ Text extraction quality depends on the original PDF format. Scanned PDFs may req
                         textExtracted: true,
                         serverProcessed: true,
                         formatPreserved: true,
-                        advancedProcessing: true,
-                        ocrApplied: response.headers.get('X-OCR-Applied') === 'true'
+                        advancedProcessing: true
                     }
                 };
             }
@@ -2103,8 +2099,7 @@ ${errorMessage ? `\\cf3\\b Error Encountered:\\b0\\cf1 ${errorMessage}\\par` : '
 \\b Option 1: Try Server Mode (Recommended)\\b0\\par
 • Click "Server Processing" mode in our tool\\par
 • Upload your PDF for advanced server-side conversion\\par
-• Get real DOC files with text, images, and formatting\\par
-• Supports OCR for scanned PDFs\\par\\par
+• Get real DOC files with text, images, and formatting\\par\\par
 
 \\b Option 2: Copy-Paste Method\\b0\\par
 1. Open your PDF file in any PDF reader\\par
@@ -2118,12 +2113,6 @@ ${errorMessage ? `\\cf3\\b Error Encountered:\\b0\\cf1 ${errorMessage}\\par` : '
 • Google Docs: Upload PDF → File → Download → Word\\par
 • Microsoft Word: File → Open → Select PDF → Convert\\par
 • Adobe Acrobat online converter\\par\\par
-
-\\b Option 4: OCR for Scanned PDFs\\b0\\par
-If your PDF contains scanned images:\\par
-• Use Google Drive OCR (upload PDF → open with Google Docs)\\par
-• Use Microsoft OneNote (Insert → File → PDF)\\par
-• Use online OCR tools like OCR.space\\par\\par
 
 \\b Tips for Better Results:\\b0\\par
 ✓ Ensure PDF text is selectable (not scanned images)\\par

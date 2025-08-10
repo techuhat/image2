@@ -209,34 +209,17 @@ except ImportError:
     PDFPLUMBER_AVAILABLE = False
 
 try:
-    import pytesseract
-    # Set Tesseract executable path for Windows
-    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-    TESSERACT_AVAILABLE = True
-except ImportError:
-    TESSERACT_AVAILABLE = False
-
-try:
-    # Temporarily disable EasyOCR due to torch loading issues
-    # import easyocr
-    EASYOCR_AVAILABLE = False
-    logger.info("EasyOCR disabled - using Tesseract only")
-except (ImportError, Exception) as e:
-    # EasyOCR or PyTorch may have loading issues, use fallback
-    EASYOCR_AVAILABLE = False
-    logger.warning(f"EasyOCR not available: {e}")
-
-try:
-    import cv2
-    OPENCV_AVAILABLE = True
-except ImportError:
-    OPENCV_AVAILABLE = False
-
-try:
     import numpy as np
     NUMPY_AVAILABLE = True
 except ImportError:
     NUMPY_AVAILABLE = False
+
+# OCR functionality removed for Azure deployment optimization
+TESSERACT_AVAILABLE = False
+EASYOCR_AVAILABLE = False
+OPENCV_AVAILABLE = False
+
+logger.info("OCR features disabled for lightweight deployment")
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -324,11 +307,9 @@ def health_check():
         "capabilities": {
             "pdf_compression": GHOSTSCRIPT_AVAILABLE or PYMUPDF_AVAILABLE,
             "pdf_to_docx": PDF2DOCX_AVAILABLE or PYMUPDF_AVAILABLE,
-            "pdf_ocr": TESSERACT_AVAILABLE or EASYOCR_AVAILABLE,
             "pdf_advanced_processing": PIKEPDF_AVAILABLE or PDFPLUMBER_AVAILABLE,
             "image_compression": True,  # Always available with Pillow
             "batch_processing": True,
-            "ocr_processing": TESSERACT_AVAILABLE or EASYOCR_AVAILABLE,
             "advanced_compression": True
         },
         "system_tools": {
@@ -337,18 +318,15 @@ def health_check():
             "pymupdf": PYMUPDF_AVAILABLE,
             "pikepdf": PIKEPDF_AVAILABLE,
             "pdfplumber": PDFPLUMBER_AVAILABLE,
-            "tesseract": TESSERACT_AVAILABLE,
-            "easyocr": EASYOCR_AVAILABLE,
-            "opencv": OPENCV_AVAILABLE,
             "numpy": NUMPY_AVAILABLE,
             "pillow": True
+        },
         },
         "supported_operations": [
             "compress-pdf",
             "pdf-to-docx", 
             "compress-image",
             "batch-process",
-            "pdf-ocr",
             "pdf-merge",
             "pdf-split",
             "pdf-rotate",
@@ -368,12 +346,12 @@ def health_check():
             }
         },
         "features": {
-            "ocr_support": TESSERACT_AVAILABLE or EASYOCR_AVAILABLE,
             "advanced_compression": True,
             "batch_processing": True,
             "file_caching": True,
             "real_time_processing": True,
-            "multi_format_support": True
+            "multi_format_support": True,
+            "ocr_support": False
         }
     })
 
@@ -1006,146 +984,6 @@ def batch_process():
     except Exception as e:
         logger.error(f"Batch processing error: {str(e)}")
         return jsonify({"error": f"Batch processing failed: {str(e)}"}), 500
-
-@app.route('/pdf-ocr', methods=['POST'])
-def pdf_ocr():
-    """
-    Extract text from PDF using OCR (Optical Character Recognition)
-    Features: Tesseract OCR, EasyOCR, multi-language support
-    """
-    logger.info("PDF OCR request received")
-    
-    if not (TESSERACT_AVAILABLE or EASYOCR_AVAILABLE):
-        return jsonify({
-            "error": "OCR processing not available. Install Tesseract or EasyOCR"
-        }), 500
-    
-    if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
-    
-    file = request.files['file']
-    language = request.form.get('language', 'eng')
-    ocr_engine = request.form.get('engine', 'tesseract')  # tesseract or easyocr
-    
-    if file.filename == '':
-        return jsonify({"error": "No file selected"}), 400
-    
-    if not file.filename.lower().endswith('.pdf'):
-        return jsonify({"error": "Only PDF files are supported"}), 400
-    
-    try:
-        # Read file content and generate hash
-        file_content = file.read()
-        file_hash = get_file_hash(file_content)
-        
-        # Generate filenames
-        original_name = secure_filename(file.filename)
-        base_name = Path(original_name).stem
-        output_filename = f"{base_name}_ocr.txt"
-        
-        # Check cache
-        cached_file = CACHE_DIR / f"{file_hash}_{language}_{output_filename}"
-        
-        if cached_file.exists():
-            logger.info(f"Returning cached OCR result: {output_filename}")
-            return send_file(
-                cached_file,
-                as_attachment=True,
-                download_name=output_filename,
-                mimetype='text/plain'
-            )
-        
-        # Create temporary files
-        temp_pdf = TEMP_DIR / f"{file_hash}_input.pdf"
-        
-        # Write PDF file
-        with open(temp_pdf, 'wb') as f:
-            f.write(file_content)
-        
-        extracted_text = ""
-        
-        if ocr_engine == 'easyocr' and EASYOCR_AVAILABLE:
-            try:
-                logger.info("Using EasyOCR for text extraction")
-                import easyocr
-                import fitz
-                
-                reader = easyocr.Reader([language])
-                doc = fitz.open(str(temp_pdf))
-                
-                for page_num in range(len(doc)):
-                    page = doc.load_page(page_num)
-                    pix = page.get_pixmap()
-                    img_array = np.frombuffer(pix.samples, dtype=np.uint8).reshape(
-                        pix.height, pix.width, pix.n
-                    )
-                    
-                    results = reader.readtext(img_array)
-                    page_text = '\n'.join([text[1] for text in results])
-                    extracted_text += f"\n--- Page {page_num + 1} ---\n{page_text}\n"
-                
-                doc.close()
-                
-            except Exception as e:
-                logger.warning(f"EasyOCR failed: {e}")
-                # Force fallback to Tesseract
-                ocr_engine = 'tesseract'
-        
-        if ocr_engine == 'tesseract' and TESSERACT_AVAILABLE:
-            try:
-                logger.info("Using Tesseract for text extraction")
-                import fitz
-                import pytesseract
-                from PIL import Image
-                
-                doc = fitz.open(str(temp_pdf))
-                
-                for page_num in range(len(doc)):
-                    page = doc.load_page(page_num)
-                    pix = page.get_pixmap()
-                    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-                    
-                    page_text = pytesseract.image_to_string(img, lang=language)
-                    extracted_text += f"\n--- Page {page_num + 1} ---\n{page_text}\n"
-                
-                doc.close()
-                
-            except Exception as e:
-                logger.error(f"Tesseract OCR failed: {e}")
-                return jsonify({
-                    "error": f"OCR processing failed: {str(e)}"
-                }), 500
-        
-        if not extracted_text.strip():
-            return jsonify({
-                "error": "No text could be extracted from the PDF"
-            }), 500
-        
-        # Save to cache
-        with open(cached_file, 'w', encoding='utf-8') as f:
-            f.write(extracted_text)
-        
-        logger.info(f"Successfully extracted text from {original_name} using {ocr_engine}")
-        
-        @after_this_request
-        def cleanup(response):
-            try:
-                if temp_pdf.exists():
-                    temp_pdf.unlink()
-            except Exception as e:
-                logger.warning(f"Cleanup error: {e}")
-            return response
-        
-        return send_file(
-            cached_file,
-            as_attachment=True,
-            download_name=output_filename,
-            mimetype='text/plain'
-        )
-        
-    except Exception as e:
-        logger.error(f"PDF OCR error: {str(e)}")
-        return jsonify({"error": f"OCR processing failed: {str(e)}"}), 500
 
 @app.route('/pdf-merge', methods=['POST'])
 def pdf_merge():

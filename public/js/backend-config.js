@@ -17,7 +17,6 @@ window.SHARED_BACKEND_CONFIG = {
         batchProcess: '/batch-process',
         
         // Advanced PDF Processing
-        pdfOcr: '/pdf-ocr',
         pdfMerge: '/pdf-merge',
         pdfSplit: '/pdf-split',
         pdfRotate: '/pdf-rotate',
@@ -49,7 +48,6 @@ window.SHARED_BACKEND_CONFIG = {
     
     // Advanced features configuration
     features: {
-        ocr: true,
         advancedCompression: true,
         batchProcessing: true,
         multiFormatSupport: true
@@ -111,7 +109,6 @@ window.BackendStatus = {
         }
         
         const advancedFeatures = [
-            'pdf_ocr',
             'pdf_advanced_processing',
             'advanced_compression',
             'batch_processing'
@@ -146,7 +143,6 @@ window.BackendStatus = {
         const features = [];
         if (this.capabilities.capabilities) {
             if (this.capabilities.capabilities.pdf_to_docx) features.push('PDF→DOCX');
-            if (this.capabilities.capabilities.pdf_ocr) features.push('OCR Processing');
             if (this.capabilities.capabilities.pdf_advanced_processing) features.push('Advanced PDF');
             if (this.capabilities.capabilities.advanced_compression) features.push('Advanced Compression');
             if (this.capabilities.capabilities.batch_processing) features.push('Batch Processing');
