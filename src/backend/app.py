@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """
-Flask Backend for PDF Tools - Azure App Service Ready
-Tools: DOCX to PDF, PDF to DOCX, PDF Compression, OCR, Advanced Processing
-Features: File caching, efficient processing, CORS support, Azure optimization
-Enhanced with Advanced Error Handling & Recovery Systems
+Enhanced Flask Backend for PDF Tools - Production Ready
+Version 3.0 - Bug Fixes, Security Enhancements, Performance Optimizations
 """
 
 import os
@@ -15,65 +13,334 @@ import traceback
 import time
 import signal
 import threading
-from datetime import datetime
+import mimetypes
+from datetime import datetime, timedelta
 from pathlib import Path
 import zipfile
 import shutil
 import json
 from functools import wraps
 from contextlib import contextmanager
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
+from collections import defaultdict, deque
+from threading import Lock
 
-# Azure-compatible logging setup (early)
+# Configuration Management
+@dataclass
+class Config:
+    """Production-ready configuration management"""
+    MAX_FILE_SIZE: int = int(os.getenv('MAX_FILE_SIZE', 500 * 1024 * 1024))
+    MAX_CONCURRENT_OPERATIONS: int = int(os.getenv('MAX_CONCURRENT_OPS', 5))
+    MAX_MEMORY_USAGE: int = int(os.getenv('MAX_MEMORY_USAGE', 80))
+    CACHE_MAX_AGE_HOURS: int = int(os.getenv('CACHE_MAX_AGE', 24))
+    LOG_LEVEL: str = os.getenv('LOG_LEVEL', 'INFO')
+    RATE_LIMIT_PER_MINUTE: int = int(os.getenv('RATE_LIMIT_PER_MINUTE', 20))
+    RATE_LIMIT_PER_HOUR: int = int(os.getenv('RATE_LIMIT_PER_HOUR', 100))
+
+config = Config()
+
+# Rate limiting implementation
+class RateLimiter:
+    def __init__(self):
+        self.requests = defaultdict(deque)
+        self.lock = Lock()
+        self.limits = {
+            'default': (config.RATE_LIMIT_PER_HOUR, 3600),  # Per hour
+            'pdf_convert': (10, 60),  # 10 PDF conversions per minute  
+            'batch_process': (5, 300),  # 5 batch operations per 5 minutes
+            'compress': (config.RATE_LIMIT_PER_MINUTE, 60)  # Per minute
+        }
+    
+    def is_allowed(self, client_ip: str, endpoint: str = 'default') -> tuple:
+        """Check if request is allowed and return rate limit info"""
+        limit_count, limit_window = self.limits.get(endpoint, self.limits['default'])
+        now = time.time()
+        key = f"{client_ip}:{endpoint}"
+        
+        with self.lock:
+            # Clean old requests
+            while (self.requests[key] and 
+                   self.requests[key][0] < now - limit_window):
+                self.requests[key].popleft()
+            
+            current_count = len(self.requests[key])
+            
+            if current_count >= limit_count:
+                # Rate limit exceeded
+                oldest_request = self.requests[key][0] if self.requests[key] else now
+                reset_time = oldest_request + limit_window
+                return False, {
+                    'limit': limit_count,
+                    'remaining': 0,
+                    'reset': int(reset_time),
+                    'retry_after': int(reset_time - now)
+                }
+            
+            # Allow request
+            self.requests[key].append(now)
+            return True, {
+                'limit': limit_count,
+                'remaining': limit_count - current_count - 1,
+                'reset': int(now + limit_window),
+                'retry_after': 0
+            }
+
+# Request monitoring
+class RequestMonitor:
+    def __init__(self):
+        self.requests = deque(maxlen=1000)  # Keep last 1000 requests
+        self.lock = Lock()
+    
+    def log_request(self, endpoint: str, method: str, status_code: int, 
+                   duration: float, client_ip: str, user_agent: str = None):
+        """Log request details for monitoring"""
+        request_data = {
+            'timestamp': datetime.now().isoformat(),
+            'endpoint': endpoint,
+            'method': method,
+            'status_code': status_code,
+            'duration_ms': round(duration * 1000, 2),
+            'client_ip': client_ip,
+            'user_agent': user_agent[:100] if user_agent else None
+        }
+        
+        with self.lock:
+            self.requests.append(request_data)
+    
+    def get_stats(self, hours: int = 1) -> dict:
+        """Get request statistics for the last N hours"""
+        cutoff = datetime.now() - timedelta(hours=hours)
+        
+        with self.lock:
+            recent_requests = [
+                req for req in self.requests
+                if datetime.fromisoformat(req['timestamp']) > cutoff
+            ]
+        
+        if not recent_requests:
+            return {'total_requests': 0, 'period_hours': hours}
+        
+        # Calculate statistics
+        total_requests = len(recent_requests)
+        avg_duration = sum(req['duration_ms'] for req in recent_requests) / total_requests
+        
+        status_codes = defaultdict(int)
+        endpoints = defaultdict(int)
+        methods = defaultdict(int)
+        
+        for req in recent_requests:
+            status_codes[req['status_code']] += 1
+            endpoints[req['endpoint']] += 1
+            methods[req['method']] += 1
+        
+        return {
+            'total_requests': total_requests,
+            'period_hours': hours,
+            'requests_per_hour': round(total_requests / hours, 2),
+            'average_duration_ms': round(avg_duration, 2),
+            'status_codes': dict(status_codes),
+            'endpoints': dict(sorted(endpoints.items(), key=lambda x: x[1], reverse=True)),
+            'methods': dict(methods)
+        }
+
+# Enhanced logging setup
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
+    level=getattr(logging, config.LOG_LEVEL),
+    format='%(asctime)s - %(levelname)s - %(name)s - [%(funcName)s:%(lineno)d] - %(message)s',
     handlers=[
-        logging.StreamHandler()  # Azure uses stdout for logging
+        logging.StreamHandler(),
+        logging.FileHandler('app.log', mode='a')  # File logging for debugging
     ]
 )
 logger = logging.getLogger(__name__)
 
-# Enhanced error tracking
+# Security configurations using Config
+MAX_FILE_SIZE = config.MAX_FILE_SIZE
+MAX_MEMORY_USAGE = config.MAX_MEMORY_USAGE
+MAX_CONCURRENT_OPERATIONS = config.MAX_CONCURRENT_OPERATIONS
+ALLOWED_MIME_TYPES = {
+    'application/pdf': ['.pdf'],
+    'image/jpeg': ['.jpg', '.jpeg'],
+    'image/png': ['.png'],
+    'image/webp': ['.webp'],
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
+}
+
+# Enhanced error tracking with rate limiting
 error_counts = {}
 last_errors = []
-MAX_ERROR_HISTORY = 100
+MAX_ERROR_HISTORY = 200
+operation_semaphore = threading.Semaphore(MAX_CONCURRENT_OPERATIONS)
 
-def track_error(error_type, error_msg):
-    """Track errors for monitoring and debugging"""
+# Try to import optional dependencies with fallbacks
+try:
+    import magic  # For better file type detection
+    MAGIC_AVAILABLE = True
+    logger.info("✅ python-magic loaded successfully")
+except ImportError:
+    MAGIC_AVAILABLE = False
+    logger.warning("❌ python-magic not available, using basic file validation")
+
+try:
+    import psutil  # For resource monitoring
+    PSUTIL_AVAILABLE = True
+    logger.info("✅ psutil loaded successfully")
+except ImportError:
+    PSUTIL_AVAILABLE = False
+    logger.warning("❌ psutil not available, resource monitoring disabled")
+
+class SecurityValidator:
+    """Enhanced security validation for file uploads"""
+    
+    @staticmethod
+    def validate_file_signature(file_content, expected_extension):
+        """Validate file using magic bytes"""
+        if not MAGIC_AVAILABLE:
+            return True, "Magic bytes validation not available"
+            
+        try:
+            mime_type = magic.from_buffer(file_content, mime=True)
+            if mime_type not in ALLOWED_MIME_TYPES:
+                return False, f"Unauthorized MIME type: {mime_type}"
+            
+            if expected_extension not in ALLOWED_MIME_TYPES[mime_type]:
+                return False, f"Extension {expected_extension} doesn't match MIME type {mime_type}"
+            
+            return True, "Valid file"
+        except Exception as e:
+            logger.warning(f"Magic bytes validation failed: {e}")
+            return True, "Could not validate file signature"
+    
+    @staticmethod
+    def sanitize_filename(filename):
+        """Enhanced filename sanitization"""
+        import re
+        
+        # Remove path components
+        filename = os.path.basename(filename)
+        
+        # Replace dangerous characters
+        filename = re.sub(r'[<>:"/\\|?*]', '_', filename)
+        
+        # Limit length
+        if len(filename) > 100:
+            name, ext = os.path.splitext(filename)
+            filename = name[:95] + ext
+        
+        # Prevent hidden files
+        if filename.startswith('.'):
+            filename = '_' + filename[1:]
+        
+        return filename
+
+class ResourceMonitor:
+    """Monitor system resources and prevent overload"""
+    
+    @staticmethod
+    def check_system_health():
+        """Check if system can handle new operations"""
+        if not PSUTIL_AVAILABLE:
+            return True, "Resource monitoring not available"
+            
+        try:
+            memory = psutil.virtual_memory()
+            cpu_percent = psutil.cpu_percent(interval=1)
+            disk = psutil.disk_usage('/')
+            
+            # Check memory usage
+            if memory.percent > MAX_MEMORY_USAGE:
+                return False, f"High memory usage: {memory.percent}%"
+            
+            # Check disk space (need at least 1GB free)
+            if disk.free < 1024**3:
+                return False, f"Low disk space: {disk.free / 1024**3:.1f}GB"
+            
+            # Check CPU usage
+            if cpu_percent > 90:
+                return False, f"High CPU usage: {cpu_percent}%"
+            
+            return True, "System healthy"
+            
+        except Exception as e:
+            logger.warning(f"Resource check failed: {e}")
+            return True, "Could not check resources"
+
+def track_error(error_type, error_msg, user_ip="unknown"):
+    """Enhanced error tracking with rate limiting"""
     global error_counts, last_errors
     
-    error_counts[error_type] = error_counts.get(error_type, 0) + 1
+    current_time = datetime.now()
+    error_key = f"{error_type}_{user_ip}"
+    
+    # Rate limiting: max 10 errors per minute per IP
+    recent_errors = [e for e in last_errors 
+                    if e.get('ip') == user_ip and 
+                    datetime.fromisoformat(e['timestamp']) > current_time - timedelta(minutes=1)]
+    
+    if len(recent_errors) > 10:
+        logger.warning(f"Rate limit exceeded for IP {user_ip}")
+        return False
+    
+    error_counts[error_key] = error_counts.get(error_key, 0) + 1
     error_entry = {
-        'timestamp': datetime.now().isoformat(),
+        'timestamp': current_time.isoformat(),
         'type': error_type,
         'message': str(error_msg),
-        'count': error_counts[error_type]
+        'ip': user_ip,
+        'count': error_counts[error_key]
     }
     
     last_errors.append(error_entry)
     if len(last_errors) > MAX_ERROR_HISTORY:
         last_errors.pop(0)
     
-    logger.error(f"Error tracked: {error_type} - {error_msg}")
+    logger.error(f"Error tracked: {error_type} - {error_msg} (IP: {user_ip})")
+    return True
 
 def enhanced_error_handler(func):
-    """Advanced error handling decorator with recovery mechanisms"""
+    """Production-ready error handling with monitoring"""
     @wraps(func)
     def wrapper(*args, **kwargs):
+        from flask import request
+        user_ip = request.remote_addr if hasattr(request, 'remote_addr') else 'unknown'
+        
+        # Check system health before processing
+        healthy, health_msg = ResourceMonitor.check_system_health()
+        if not healthy:
+            from flask import jsonify
+            return jsonify({
+                "error": "System overloaded",
+                "code": "SYSTEM_OVERLOAD",
+                "details": health_msg,
+                "retry_after": 60
+            }), 503
+        
+        # Acquire semaphore for concurrency control
+        if not operation_semaphore.acquire(blocking=False):
+            from flask import jsonify
+            return jsonify({
+                "error": "Server busy",
+                "code": "TOO_MANY_REQUESTS",
+                "details": f"Maximum {MAX_CONCURRENT_OPERATIONS} concurrent operations allowed",
+                "retry_after": 30
+            }), 429
+        
         try:
             return func(*args, **kwargs)
         except MemoryError as e:
-            track_error("MEMORY_ERROR", str(e))
-            logger.critical(f"Memory error in {func.__name__}: {e}")
+            track_error("MEMORY_ERROR", str(e), user_ip)
+            from flask import jsonify
             return jsonify({
-                "error": "Insufficient memory for this operation",
+                "error": "Insufficient memory",
                 "code": "MEMORY_ERROR",
                 "suggestion": "Try with a smaller file or reduce quality settings",
                 "retry_after": 60
             }), 507
         except subprocess.TimeoutExpired as e:
-            track_error("TIMEOUT_ERROR", str(e))
-            logger.warning(f"Timeout in {func.__name__}: {e}")
+            track_error("TIMEOUT_ERROR", str(e), user_ip)
+            from flask import jsonify
             return jsonify({
                 "error": "Operation timed out",
                 "code": "TIMEOUT_ERROR", 
@@ -81,26 +348,27 @@ def enhanced_error_handler(func):
                 "retry_after": 30
             }), 408
         except FileNotFoundError as e:
-            track_error("FILE_NOT_FOUND", str(e))
-            logger.error(f"File not found in {func.__name__}: {e}")
+            track_error("FILE_NOT_FOUND", str(e), user_ip)
+            from flask import jsonify
             return jsonify({
                 "error": "Required system tool not found",
                 "code": "TOOL_MISSING",
-                "suggestion": "Please ensure all dependencies are installed",
+                "suggestion": "Server configuration issue",
                 "details": str(e)
             }), 500
         except PermissionError as e:
-            track_error("PERMISSION_ERROR", str(e))
-            logger.error(f"Permission error in {func.__name__}: {e}")
+            track_error("PERMISSION_ERROR", str(e), user_ip)
+            from flask import jsonify
             return jsonify({
                 "error": "Permission denied",
                 "code": "PERMISSION_ERROR",
-                "suggestion": "Check file permissions and disk space"
+                "suggestion": "Server permission issue"
             }), 403
         except Exception as e:
-            track_error("UNKNOWN_ERROR", str(e))
+            track_error("UNKNOWN_ERROR", str(e), user_ip)
             logger.error(f"Unexpected error in {func.__name__}: {e}")
             logger.error(f"Traceback: {traceback.format_exc()}")
+            from flask import jsonify
             return jsonify({
                 "error": "Internal server error",
                 "code": "INTERNAL_ERROR",
@@ -108,253 +376,716 @@ def enhanced_error_handler(func):
                 "suggestion": "Please try again or contact support",
                 "function": func.__name__
             }), 500
+        finally:
+            operation_semaphore.release()
+    
     return wrapper
 
-@contextmanager
-def safe_temp_file(suffix="", prefix="temp_"):
-    """Safe temporary file context manager with cleanup guarantee"""
-    temp_file = None
+def validate_file_size_streaming(file_stream, max_size):
+    """Better file size validation with streaming to prevent memory issues"""
+    total_size = 0
+    chunk_size = 8192
+    original_position = file_stream.tell()
+    file_stream.seek(0)
+    
     try:
-        temp_file = tempfile.NamedTemporaryFile(suffix=suffix, prefix=prefix, delete=False)
-        yield temp_file.name
+        while True:
+            chunk = file_stream.read(chunk_size)
+            if not chunk:
+                break
+            total_size += len(chunk)
+            if total_size > max_size:
+                raise ValueError(f"File too large: {total_size} bytes > {max_size} bytes")
+        
+        file_stream.seek(0)
+        return total_size
     except Exception as e:
-        logger.error(f"Temp file error: {e}")
+        file_stream.seek(original_position)
         raise
+
+def validate_quality_param(quality_str, default=85):
+    """Validate and sanitize quality parameter"""
+    try:
+        quality = int(quality_str)
+        if not 1 <= quality <= 100:
+            logger.warning(f"Invalid quality {quality}, using default {default}")
+            return default
+        return quality
+    except (ValueError, TypeError):
+        logger.warning(f"Invalid quality format '{quality_str}', using default {default}")
+        return default
+
+@contextmanager
+def temp_file_manager(*file_paths):
+    """Context manager for better temp file cleanup"""
+    try:
+        yield file_paths
     finally:
-        if temp_file and os.path.exists(temp_file.name):
+        for file_path in file_paths:
             try:
-                os.unlink(temp_file.name)
+                if file_path and Path(file_path).exists():
+                    Path(file_path).unlink()
+                    logger.debug(f"Cleaned up temp file: {file_path}")
             except Exception as e:
-                logger.warning(f"Failed to cleanup temp file {temp_file.name}: {e}")
+                logger.warning(f"Cleanup failed for {file_path}: {e}")
 
 def validate_file_upload(file, allowed_extensions, max_size_mb=100):
-    """Enhanced file validation with security checks"""
+    """Enhanced file validation with security checks and streaming validation"""
     if not file or file.filename == '':
         raise ValueError("No file provided")
     
+    # Sanitize filename
+    safe_filename = SecurityValidator.sanitize_filename(file.filename)
+    if not safe_filename:
+        raise ValueError("Invalid filename")
+    
     # Check file extension
-    file_ext = Path(file.filename).suffix.lower()
+    file_ext = Path(safe_filename).suffix.lower()
     if file_ext not in allowed_extensions:
         raise ValueError(f"Unsupported file type. Allowed: {', '.join(allowed_extensions)}")
     
-    # Check file size (read first to get size)
-    file.seek(0, 2)  # Seek to end
-    size = file.tell()
-    file.seek(0)  # Seek back to beginning
-    
+    # Use streaming validation for file size
     max_size_bytes = max_size_mb * 1024 * 1024
-    if size > max_size_bytes:
-        raise ValueError(f"File too large. Maximum size: {max_size_mb}MB")
+    try:
+        file_size = validate_file_size_streaming(file, max_size_bytes)
+    except ValueError as e:
+        raise ValueError(f"File validation failed: {str(e)}")
     
-    # Basic content validation
-    if size == 0:
+    if file_size == 0:
         raise ValueError("File is empty")
     
-    return True
-
-def check_system_resources():
-    """Check available system resources"""
-    try:
-        import psutil
-        memory = psutil.virtual_memory()
-        disk = psutil.disk_usage('/')
-        
-        return {
-            'memory_available_gb': round(memory.available / (1024**3), 2),
-            'memory_percent': memory.percent,
-            'disk_free_gb': round(disk.free / (1024**3), 2),
-            'disk_percent': round((disk.used / disk.total) * 100, 2)
-        }
-    except ImportError:
-        return {'error': 'psutil not available'}
-    except Exception as e:
-        logger.warning(f"Resource check failed: {e}")
-        return {'error': str(e)}
+    # Read first part for magic bytes validation
+    file_start = file.read(8192)
+    file.seek(0)
+    
+    # Validate file signature
+    is_valid, validation_msg = SecurityValidator.validate_file_signature(file_start, file_ext)
+    if not is_valid:
+        raise ValueError(f"Security validation failed: {validation_msg}")
+    
+    return safe_filename
 
 # Flask and web framework imports
-from flask import Flask, request, jsonify, send_file, after_this_request
+from flask import Flask, request, jsonify, send_file, after_this_request, make_response, g
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import RequestEntityTooLarge
 
-from flask import Flask, request, jsonify, send_file, after_this_request
-from flask_cors import CORS
-from werkzeug.utils import secure_filename
-from werkzeug.exceptions import RequestEntityTooLarge
+# All PDF and image processing imports with error handling
+try:
+    from PIL import Image, ImageOps
+    PIL_AVAILABLE = True
+    logger.info("✅ PIL/Pillow loaded successfully")
+except ImportError:
+    PIL_AVAILABLE = False
+    logger.warning("❌ PIL/Pillow not available")
 
-# PDF and document processing libraries
 try:
     from pdf2docx import Converter
     PDF2DOCX_AVAILABLE = True
+    logger.info("✅ pdf2docx loaded successfully")
 except ImportError:
     PDF2DOCX_AVAILABLE = False
+    logger.warning("❌ pdf2docx not available")
 
 try:
     import fitz  # PyMuPDF
     PYMUPDF_AVAILABLE = True
+    logger.info("✅ PyMuPDF loaded successfully")
 except ImportError:
     PYMUPDF_AVAILABLE = False
+    logger.warning("❌ PyMuPDF not available")
 
-# Advanced PDF Processing Libraries
 try:
     import pikepdf
     PIKEPDF_AVAILABLE = True
+    logger.info("✅ pikepdf loaded successfully")
 except ImportError:
     PIKEPDF_AVAILABLE = False
+    logger.warning("❌ pikepdf not available")
 
 try:
-    import pdfplumber
-    PDFPLUMBER_AVAILABLE = True
+    from docx import Document
+    PYTHON_DOCX_AVAILABLE = True
+    logger.info("✅ python-docx loaded successfully")
 except ImportError:
-    PDFPLUMBER_AVAILABLE = False
+    PYTHON_DOCX_AVAILABLE = False
+    logger.warning("❌ python-docx not available")
 
-try:
-    import numpy as np
-    NUMPY_AVAILABLE = True
-except ImportError:
-    NUMPY_AVAILABLE = False
-
-# OCR functionality removed for Azure deployment optimization
-TESSERACT_AVAILABLE = False
-EASYOCR_AVAILABLE = False
-OPENCV_AVAILABLE = False
-
-logger.info("OCR features disabled for lightweight deployment")
-
-# Initialize Flask app
+# Initialize Flask app with enhanced configuration
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB max file size for advanced processing
+app.config.update({
+    'MAX_CONTENT_LENGTH': MAX_FILE_SIZE,
+    'UPLOAD_FOLDER': 'uploads',
+    'SECRET_KEY': os.environ.get('SECRET_KEY') or os.urandom(32).hex(),
+    'JSON_SORT_KEYS': False,
+    'JSONIFY_PRETTYPRINT_REGULAR': False
+})
 
-# Azure-optimized CORS configuration
-CORS(app, origins=[
-    "https://techuhat.github.io",
-    "https://image2.vercel.app", 
-    "http://localhost:3000",
-    "http://127.0.0.1:3000"
-])
+# Initialize rate limiter and request monitor
+rate_limiter = RateLimiter()
+request_monitor = RequestMonitor()
 
-# Create directories for caching
+# Track application start time for uptime metrics
+app.start_time = time.time()
+
+def rate_limit(endpoint: str = 'default'):
+    """Rate limiting decorator"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', 
+                                          request.environ.get('HTTP_X_REAL_IP', 
+                                          request.remote_addr))
+            
+            allowed, rate_info = rate_limiter.is_allowed(client_ip, endpoint)
+            
+            if not allowed:
+                response = jsonify({
+                    'error': 'Rate limit exceeded',
+                    'message': f'Too many requests for {endpoint}',
+                    'retry_after': rate_info['retry_after']
+                })
+                response.status_code = 429
+                response.headers['X-RateLimit-Limit'] = str(rate_info['limit'])
+                response.headers['X-RateLimit-Remaining'] = str(rate_info['remaining'])
+                response.headers['X-RateLimit-Reset'] = str(rate_info['reset'])
+                response.headers['Retry-After'] = str(rate_info['retry_after'])
+                return response
+            
+            # Add rate limit headers to successful responses
+            response = make_response(f(*args, **kwargs))
+            response.headers['X-RateLimit-Limit'] = str(rate_info['limit'])
+            response.headers['X-RateLimit-Remaining'] = str(rate_info['remaining'])
+            response.headers['X-RateLimit-Reset'] = str(rate_info['reset'])
+            
+            return response
+        return decorated_function
+    return decorator
+
+@app.before_request
+def before_request():
+    """Set request start time for monitoring"""
+    g.start_time = time.time()
+
+@app.after_request  
+def after_request(response):
+    """Log request details for monitoring"""
+    if hasattr(g, 'start_time'):
+        duration = time.time() - g.start_time
+        client_ip = request.environ.get('HTTP_X_FORWARDED_FOR',
+                                      request.environ.get('HTTP_X_REAL_IP', 
+                                      request.remote_addr))
+        user_agent = request.headers.get('User-Agent')
+        
+        request_monitor.log_request(
+            endpoint=request.endpoint or 'unknown',
+            method=request.method,
+            status_code=response.status_code,
+            duration=duration,
+            client_ip=client_ip,
+            user_agent=user_agent
+        )
+    
+    return response
+
+# Enhanced CORS configuration
+CORS(app, 
+     origins=[
+         "https://techuhat.github.io",
+         "https://image2.vercel.app", 
+         "http://localhost:3000",
+         "http://127.0.0.1:3000"
+     ],
+     methods=['GET', 'POST', 'OPTIONS'],
+     allow_headers=['Content-Type', 'Authorization'],
+     max_age=3600
+)
+
+# Create directories with proper permissions
 CACHE_DIR = Path("cache")
-CACHE_DIR.mkdir(exist_ok=True)
 TEMP_DIR = Path("temp")
-TEMP_DIR.mkdir(exist_ok=True)
+UPLOADS_DIR = Path("uploads")
 
-def get_file_hash(file_content):
-    """Generate SHA256 hash of file content for caching"""
-    return hashlib.sha256(file_content).hexdigest()
+for directory in [CACHE_DIR, TEMP_DIR, UPLOADS_DIR]:
+    directory.mkdir(mode=0o755, exist_ok=True)
 
-def check_ghostscript():
-    """Check if Ghostscript is available in system"""
-    try:
-        # Try with full path first (Windows)
-        gs_paths = [
-            r'C:\Program Files\gs\gs10.05.1\bin\gswin64c.exe',
-            'gs',  # Try system PATH
-            'gswin64c'
-        ]
-        
-        for path in gs_paths:
-            try:
-                result = subprocess.run([path, '--version'], 
-                                      capture_output=True, text=True, timeout=10)
-                if result.returncode == 0:
-                    return True
-            except (subprocess.SubprocessError, FileNotFoundError):
-                continue
-        return False
-    except Exception:
-        return False
+# Cache management
+class CacheManager:
+    """Enhanced cache management with cleanup and size limits"""
+    
+    @staticmethod
+    def get_file_hash(file_content):
+        """Generate SHA256 hash with salt"""
+        salt = os.environ.get('CACHE_SALT', 'default-salt')
+        return hashlib.sha256(salt.encode() + file_content).hexdigest()
+    
+    @staticmethod
+    def cleanup_old_cache(max_age_hours=24):
+        """Remove old cache files"""
+        try:
+            current_time = time.time()
+            removed_count = 0
+            
+            for cache_file in CACHE_DIR.glob('*'):
+                if cache_file.is_file():
+                    file_age = current_time - cache_file.stat().st_mtime
+                    if file_age > max_age_hours * 3600:
+                        cache_file.unlink()
+                        removed_count += 1
+            
+            # Also clean temp directory
+            for temp_file in TEMP_DIR.glob('*'):
+                if temp_file.is_file():
+                    file_age = current_time - temp_file.stat().st_mtime
+                    if file_age > 3600:  # Remove temp files older than 1 hour
+                        temp_file.unlink()
+                        removed_count += 1
+            
+            if removed_count > 0:
+                logger.info(f"Cleaned up {removed_count} old cache/temp files")
+                
+        except Exception as e:
+            logger.warning(f"Cache cleanup error: {e}")
+    
+    @staticmethod
+    def get_cache_stats():
+        """Get cache directory statistics"""
+        try:
+            cache_files = list(CACHE_DIR.glob('*'))
+            temp_files = list(TEMP_DIR.glob('*'))
+            
+            cache_size = sum(f.stat().st_size for f in cache_files if f.is_file())
+            temp_size = sum(f.stat().st_size for f in temp_files if f.is_file())
+            
+            return {
+                'cache_files': len(cache_files),
+                'temp_files': len(temp_files),
+                'cache_size_mb': round(cache_size / (1024**2), 2),
+                'temp_size_mb': round(temp_size / (1024**2), 2),
+                'total_size_mb': round((cache_size + temp_size) / (1024**2), 2)
+            }
+        except Exception as e:
+            logger.warning(f"Cache stats error: {e}")
+            return {}
 
-def check_tesseract():
-    """Check if Tesseract OCR is available"""
-    try:
-        # Try with full path first (Windows)
-        tesseract_paths = [
-            r'C:\Program Files\Tesseract-OCR\tesseract.exe',
-            'tesseract'  # Try system PATH
-        ]
-        
-        for path in tesseract_paths:
-            try:
-                result = subprocess.run([path, '--version'], 
-                                      capture_output=True, text=True, timeout=10)
-                if result.returncode == 0:
-                    return True
-            except (subprocess.SubprocessError, FileNotFoundError):
-                continue
-        return False
-    except Exception:
-        return False
+# System capability detection with better error handling
+def check_system_tools():
+    """Comprehensive system tool detection"""
+    tools = {}
+    
+    # Check Ghostscript
+    gs_paths = [
+        r'C:\Program Files\gs\gs10.05.1\bin\gswin64c.exe',
+        r'C:\Program Files\gs\gs9.56.1\bin\gswin64c.exe',
+        'gs', 'gswin64c', 'gswin32c'
+    ]
+    
+    for path in gs_paths:
+        try:
+            result = subprocess.run([path, '--version'], 
+                                  capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                tools['ghostscript'] = {
+                    'available': True,
+                    'path': path,
+                    'version': result.stdout.strip().split('\n')[0] if result.stdout else 'Unknown'
+                }
+                break
+        except (subprocess.SubprocessError, FileNotFoundError, subprocess.TimeoutExpired):
+            continue
+    
+    if 'ghostscript' not in tools:
+        tools['ghostscript'] = {'available': False, 'path': None, 'version': None}
+    
+    # Check LibreOffice
+    libreoffice_paths = ['libreoffice', 'soffice']
+    for path in libreoffice_paths:
+        try:
+            result = subprocess.run([path, '--version'], 
+                                  capture_output=True, text=True, timeout=10)
+            if result.returncode == 0:
+                tools['libreoffice'] = {
+                    'available': True,
+                    'path': path,
+                    'version': result.stdout.strip()
+                }
+                break
+        except (subprocess.SubprocessError, FileNotFoundError, subprocess.TimeoutExpired):
+            continue
+    
+    if 'libreoffice' not in tools:
+        tools['libreoffice'] = {'available': False, 'path': None, 'version': None}
+    
+    return tools
 
-# System capability checks
-GHOSTSCRIPT_AVAILABLE = check_ghostscript()
-TESSERACT_AVAILABLE = check_tesseract()
+# Initialize system tools
+SYSTEM_TOOLS = check_system_tools()
+logger.info(f"System tools detected: {SYSTEM_TOOLS}")
 
-@app.route('/ping', methods=['GET'])
-def ping():
-    """Health check endpoint"""
-    return "pong"
+# Background task for cache cleanup
+def background_cleanup():
+    """Background task to clean up cache periodically"""
+    while True:
+        try:
+            time.sleep(3600)  # Run every hour
+            CacheManager.cleanup_old_cache()
+        except Exception as e:
+            logger.error(f"Background cleanup error: {e}")
 
+# Start background cleanup thread
+cleanup_thread = threading.Thread(target=background_cleanup, daemon=True)
+cleanup_thread.start()
+
+# Enhanced health check endpoint
 @app.route('/', methods=['GET'])
 @app.route('/health', methods=['GET'])
 def health_check():
-    """Comprehensive health check with system capabilities"""
-    return jsonify({
-        "status": "healthy",
+    """Comprehensive health check with enhanced system info"""
+    try:
+        system_health = ResourceMonitor.check_system_health()
+        cache_stats = CacheManager.get_cache_stats()
+        
+        return jsonify({
+            "status": "healthy" if system_health[0] else "degraded",
+            "timestamp": datetime.now().isoformat(),
+            "version": "3.0.0",
+            "message": "Enhanced PDF Toolkit Backend - Production Ready",
+            "system_health": {
+                "healthy": system_health[0],
+                "message": system_health[1],
+                "concurrent_operations": MAX_CONCURRENT_OPERATIONS - operation_semaphore._value,
+                "max_concurrent": MAX_CONCURRENT_OPERATIONS
+            },
+            "capabilities": {
+                "pdf_compression": SYSTEM_TOOLS['ghostscript']['available'] or PYMUPDF_AVAILABLE,
+                "pdf_to_docx": PDF2DOCX_AVAILABLE or (PYMUPDF_AVAILABLE and PYTHON_DOCX_AVAILABLE),
+                "image_processing": PIL_AVAILABLE,
+                "batch_processing": True,
+                "advanced_security": True,
+                "resource_monitoring": PSUTIL_AVAILABLE,
+                "cache_management": True
+            },
+            "libraries": {
+                "ghostscript": SYSTEM_TOOLS['ghostscript'],
+                "libreoffice": SYSTEM_TOOLS['libreoffice'],
+                "pdf2docx": PDF2DOCX_AVAILABLE,
+                "pymupdf": PYMUPDF_AVAILABLE,
+                "pikepdf": PIKEPDF_AVAILABLE,
+                "python_docx": PYTHON_DOCX_AVAILABLE,
+                "pillow": PIL_AVAILABLE,
+                "psutil": PSUTIL_AVAILABLE,
+                "magic": MAGIC_AVAILABLE
+            },
+            "cache_stats": cache_stats,
+            "features": {
+                "advanced_error_handling": True,
+                "security_validation": True,
+                "resource_monitoring": PSUTIL_AVAILABLE,
+                "concurrent_processing": True,
+                "background_cleanup": True,
+                "rate_limiting": True
+            },
+            "limits": {
+                "max_file_size": f"{MAX_FILE_SIZE // (1024**2)}MB",
+                "max_memory_usage": f"{MAX_MEMORY_USAGE}%",
+                "max_concurrent_ops": MAX_CONCURRENT_OPERATIONS,
+                "supported_formats": list(ALLOWED_MIME_TYPES.keys())
+            }
+        })
+    except Exception as e:
+        logger.error(f"Health check error: {e}")
+        return jsonify({
+            "status": "error",
+            "timestamp": datetime.now().isoformat(),
+            "error": str(e)
+        }), 500
+
+@app.route('/ready', methods=['GET'])
+def readiness_check():
+    """Kubernetes/Production readiness probe"""
+    try:
+        # Check if all required services are available
+        if not (PYMUPDF_AVAILABLE or SYSTEM_TOOLS['ghostscript']['available']):
+            return jsonify({
+                "status": "not ready", 
+                "reason": "No PDF processors available",
+                "available_libraries": {
+                    "pymupdf": PYMUPDF_AVAILABLE,
+                    "ghostscript": SYSTEM_TOOLS['ghostscript']['available']
+                }
+            }), 503
+        
+        # Check disk space
+        if PSUTIL_AVAILABLE:
+            try:
+                disk = psutil.disk_usage('/')
+                free_gb = disk.free / (1024**3)
+                if free_gb < 1:  # Less than 1GB
+                    return jsonify({
+                        "status": "not ready", 
+                        "reason": f"Low disk space: {free_gb:.1f}GB available"
+                    }), 503
+            except Exception as disk_error:
+                logger.warning(f"Disk check failed: {disk_error}")
+        
+        # Check memory usage
+        if PSUTIL_AVAILABLE:
+            try:
+                memory = psutil.virtual_memory()
+                if memory.percent > 95:  # Very high memory usage
+                    return jsonify({
+                        "status": "not ready",
+                        "reason": f"High memory usage: {memory.percent}%"
+                    }), 503
+            except Exception as mem_error:
+                logger.warning(f"Memory check failed: {mem_error}")
+        
+        # Check if directories are writable
+        for directory in [CACHE_DIR, TEMP_DIR, UPLOADS_DIR]:
+            if not directory.exists():
+                return jsonify({
+                    "status": "not ready",
+                    "reason": f"Required directory missing: {directory}"
+                }), 503
+        
+        return jsonify({
+            "status": "ready",
+            "timestamp": datetime.now().isoformat(),
+            "checks": {
+                "pdf_processors": True,
+                "disk_space": "ok",
+                "memory": "ok",
+                "directories": "ok"
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Readiness check error: {e}")
+        return jsonify({
+            "status": "not ready", 
+            "reason": f"Health check failed: {str(e)}"
+        }), 503
+
+@app.route('/live', methods=['GET'])
+def liveness_check():
+    """Kubernetes/Production liveness probe"""
+    try:
+        # Simple check - if the app is responding, it's alive
+        return jsonify({
+            "status": "alive",
+            "timestamp": datetime.now().isoformat(),
+            "uptime_seconds": time.time() - app.start_time if hasattr(app, 'start_time') else 0
+        })
+    except Exception as e:
+        logger.error(f"Liveness check error: {e}")
+        return jsonify({
+            "status": "error",
+            "error": str(e)
+        }), 500
+
+# Enhanced endpoint for system statistics
+@app.route('/stats', methods=['GET'])
+@enhanced_error_handler
+def get_system_stats():
+    """Enhanced system statistics for monitoring"""
+    stats = {
         "timestamp": datetime.now().isoformat(),
-        "version": "2.0.0",
-        "message": "Advanced PDF Toolkit Backend - SmallPDF/iLovePDF Level",
-        "capabilities": {
-            "pdf_compression": GHOSTSCRIPT_AVAILABLE or PYMUPDF_AVAILABLE,
-            "pdf_to_docx": PDF2DOCX_AVAILABLE or PYMUPDF_AVAILABLE,
-            "pdf_advanced_processing": PIKEPDF_AVAILABLE or PDFPLUMBER_AVAILABLE,
-            "image_compression": True,  # Always available with Pillow
-            "batch_processing": True,
-            "advanced_compression": True
+        "version": "1.0.0",
+        "system": {
+            "platform": platform.system(),
+            "python_version": platform.python_version(),
+            "architecture": platform.architecture()[0]
         },
-        "system_tools": {
-            "ghostscript": GHOSTSCRIPT_AVAILABLE,
-            "pdf2docx": PDF2DOCX_AVAILABLE,
+        "libraries": {
             "pymupdf": PYMUPDF_AVAILABLE,
-            "pikepdf": PIKEPDF_AVAILABLE,
-            "pdfplumber": PDFPLUMBER_AVAILABLE,
-            "numpy": NUMPY_AVAILABLE,
-            "pillow": True
+            "pdf2docx": PDF2DOCX_AVAILABLE,
+            "pillow": PIL_AVAILABLE,
+            "psutil": PSUTIL_AVAILABLE,
+            "magic": MAGIC_AVAILABLE
         },
-        "supported_operations": [
-            "compress-pdf",
-            "pdf-to-docx", 
-            "compress-image",
-            "batch-process",
-            "pdf-merge",
-            "pdf-split",
-            "pdf-rotate",
-            "pdf-protect",
-            "pdf-unlock",
-            "image-to-pdf",
-            "pdf-to-images"
-        ],
-        "limits": {
-            "max_file_size": "500MB",
-            "max_batch_files": 20,
-            "supported_formats": {
-                "pdf": ["pdf"],
-                "image": ["jpg", "jpeg", "png", "webp", "bmp", "tiff", "gif"],
-                "document": ["docx", "doc", "xlsx", "xls", "pptx", "ppt"],
-                "text": ["txt", "rtf", "md"]
+        "cache": cache_manager.get_stats(),
+        "concurrent_operations": concurrent_operations,
+        "max_concurrent_operations": MAX_CONCURRENT_OPERATIONS
+    }
+    
+    # Add system resource stats if available
+    if PSUTIL_AVAILABLE:
+        try:
+            # Memory information
+            memory = psutil.virtual_memory()
+            stats["memory"] = {
+                "total_gb": round(memory.total / (1024**3), 2),
+                "available_gb": round(memory.available / (1024**3), 2),
+                "used_percent": memory.percent,
+                "status": "critical" if memory.percent > 90 else "warning" if memory.percent > 75 else "ok"
+            }
+            
+            # CPU information
+            stats["cpu"] = {
+                "count": psutil.cpu_count(),
+                "usage_percent": psutil.cpu_percent(interval=1),
+                "load_average": list(psutil.getloadavg()) if hasattr(psutil, 'getloadavg') else None
+            }
+            
+            # Disk information for multiple mount points
+            stats["disk"] = {}
+            for partition in psutil.disk_partitions():
+                try:
+                    partition_usage = psutil.disk_usage(partition.mountpoint)
+                    stats["disk"][partition.mountpoint] = {
+                        "total_gb": round(partition_usage.total / (1024**3), 2),
+                        "free_gb": round(partition_usage.free / (1024**3), 2),
+                        "used_percent": round((partition_usage.used / partition_usage.total) * 100, 1),
+                        "filesystem": partition.fstype
+                    }
+                except PermissionError:
+                    # Skip inaccessible partitions
+                    continue
+                    
+        except Exception as e:
+            logger.error(f"Error collecting system stats: {e}")
+            stats["system_error"] = str(e)
+    
+    # Add process-specific stats
+    try:
+        current_process = psutil.Process() if PSUTIL_AVAILABLE else None
+        if current_process:
+            with current_process.oneshot():
+                stats["process"] = {
+                    "pid": current_process.pid,
+                    "memory_mb": round(current_process.memory_info().rss / (1024**2), 2),
+                    "cpu_percent": current_process.cpu_percent(),
+                    "num_threads": current_process.num_threads(),
+                    "open_files": len(current_process.open_files()),
+                    "connections": len(current_process.connections()),
+                    "create_time": datetime.fromtimestamp(current_process.create_time()).isoformat()
+                }
+    except Exception as e:
+        logger.error(f"Error collecting process stats: {e}")
+        stats["process_error"] = str(e)
+    
+    # Add directory stats
+    stats["directories"] = {}
+    for name, path in [("cache", CACHE_DIR), ("temp", TEMP_DIR), ("uploads", UPLOADS_DIR)]:
+        try:
+            if path.exists():
+                files = list(path.glob("*"))
+                total_size = sum(f.stat().st_size for f in files if f.is_file())
+                stats["directories"][name] = {
+                    "path": str(path),
+                    "exists": True,
+                    "file_count": len([f for f in files if f.is_file()]),
+                    "total_size_mb": round(total_size / (1024**2), 2),
+                    "writable": os.access(path, os.W_OK)
+                }
+            else:
+                stats["directories"][name] = {
+                    "path": str(path),
+                    "exists": False
+                }
+        except Exception as e:
+            stats["directories"][name] = {
+                "path": str(path),
+                "error": str(e)
+            }
+    
+    return jsonify(stats)
+
+@app.route('/metrics', methods=['GET'])
+@enhanced_error_handler  
+def get_metrics():
+    """Get detailed metrics for monitoring and observability"""
+    metrics = {
+        "timestamp": datetime.now().isoformat(),
+        "system": {
+            "uptime_seconds": time.time() - app.start_time if hasattr(app, 'start_time') else 0,
+            "version": "1.0.0"
+        },
+        "requests": {
+            "last_hour": request_monitor.get_stats(1),
+            "last_24_hours": request_monitor.get_stats(24),
+            "rate_limits": {
+                endpoint: {
+                    "limit": limit[0],
+                    "window_seconds": limit[1]
+                } for endpoint, limit in rate_limiter.limits.items()
             }
         },
-        "features": {
-            "advanced_compression": True,
-            "batch_processing": True,
-            "file_caching": True,
-            "real_time_processing": True,
-            "multi_format_support": True,
-            "ocr_support": False
+        "operations": {
+            "concurrent_operations": concurrent_operations,
+            "max_concurrent_operations": MAX_CONCURRENT_OPERATIONS,
+            "semaphore_available": operation_semaphore._value
+        },
+        "cache": cache_manager.get_stats(),
+        "libraries": {
+            "pymupdf": PYMUPDF_AVAILABLE,
+            "pdf2docx": PDF2DOCX_AVAILABLE,
+            "pillow": PIL_AVAILABLE,
+            "psutil": PSUTIL_AVAILABLE,
+            "magic": MAGIC_AVAILABLE
         }
-    })
+    }
+    
+    # Add error statistics
+    if hasattr(g, 'start_time'):
+        recent_errors = defaultdict(int)
+        for error in last_errors[-100:]:  # Last 100 errors
+            recent_errors[error.get('type', 'unknown')] += 1
+        
+        metrics["errors"] = {
+            "recent_count": len(last_errors[-100:]),
+            "by_type": dict(recent_errors),
+            "total_tracked": len(last_errors)
+        }
+    
+    return jsonify(metrics)
+        })
+    except Exception as e:
+        logger.error(f"Stats endpoint error: {e}")
+        return jsonify({"error": str(e)}), 500
 
+# Enhanced cache management endpoint
+@app.route('/clear-cache', methods=['POST'])
+@enhanced_error_handler
+def clear_cache():
+    """Enhanced cache clearing with options"""
+    try:
+        clear_type = request.json.get('type', 'all') if request.is_json else 'all'
+        
+        removed_files = 0
+        freed_space = 0
+        
+        if clear_type in ['all', 'cache']:
+            for cache_file in CACHE_DIR.glob('*'):
+                if cache_file.is_file():
+                    freed_space += cache_file.stat().st_size
+                    cache_file.unlink()
+                    removed_files += 1
+        
+        if clear_type in ['all', 'temp']:
+            for temp_file in TEMP_DIR.glob('*'):
+                if temp_file.is_file():
+                    freed_space += temp_file.stat().st_size
+                    temp_file.unlink()
+                    removed_files += 1
+        
+        logger.info(f"Cache cleared: {removed_files} files, {freed_space / (1024**2):.1f}MB freed")
+        
+        return jsonify({
+            "message": f"Cache cleared successfully ({clear_type})",
+            "files_removed": removed_files,
+            "space_freed_mb": round(freed_space / (1024**2), 1),
+            "type": clear_type
+        })
+        
+    except Exception as e:
+        logger.error(f"Cache clear error: {e}")
+        return jsonify({"error": f"Cache clear failed: {str(e)}"}), 500
+
+# Copy all the existing endpoints from app.py with enhanced error handling
 @app.route('/pdf-to-docx', methods=['POST'])
+@rate_limit('pdf_convert')
 @enhanced_error_handler
 def pdf_to_docx():
     """
@@ -381,7 +1112,7 @@ def pdf_to_docx():
     try:
         # Read file content and generate hash
         file_content = file.read()
-        file_hash = get_file_hash(file_content)
+        file_hash = CacheManager.get_file_hash(file_content)
         
         # Generate filenames
         original_name = secure_filename(file.filename)
@@ -438,9 +1169,10 @@ def pdf_to_docx():
                     conversion_method = "pdf2docx"
                     
                     # Get conversion stats
-                    doc = fitz.open(str(temp_pdf))
-                    conversion_stats["pages"] = len(doc)
-                    doc.close()
+                    if PYMUPDF_AVAILABLE:
+                        doc = fitz.open(str(temp_pdf))
+                        conversion_stats["pages"] = len(doc)
+                        doc.close()
                     
                     logger.info("Conversion successful with pdf2docx (with layout preservation)")
                 else:
@@ -452,21 +1184,12 @@ def pdf_to_docx():
                     temp_docx.unlink()
         
         # Method 2: Try enhanced PyMuPDF with proper DOCX generation
-        if PYMUPDF_AVAILABLE and not conversion_success:
+        if PYMUPDF_AVAILABLE and PYTHON_DOCX_AVAILABLE and not conversion_success:
             try:
                 logger.info("Attempting conversion with enhanced PyMuPDF")
                 
-                # Import python-docx for proper DOCX creation
-                try:
-                    from docx import Document
-                    from docx.shared import Inches
-                    from docx.enum.text import WD_ALIGN_PARAGRAPH
-                    import io
-                    import base64
-                except ImportError:
-                    logger.warning("python-docx not available, using basic text extraction")
-                    # Fallback to basic text extraction
-                    raise ImportError("python-docx required for advanced conversion")
+                import io
+                from docx.shared import Inches
                 
                 doc = fitz.open(str(temp_pdf))
                 word_doc = Document()
@@ -545,41 +1268,6 @@ def pdf_to_docx():
                 
             except Exception as e:
                 logger.warning(f"Enhanced PyMuPDF conversion failed: {e}")
-                
-                # Fallback to basic text extraction
-                try:
-                    logger.info("Falling back to basic text extraction")
-                    doc = fitz.open(str(temp_pdf))
-                    
-                    # Use simple docx creation if available
-                    try:
-                        from docx import Document
-                        word_doc = Document()
-                        
-                        for page_num in range(len(doc)):
-                            page = doc.load_page(page_num)
-                            text = page.get_text()
-                            
-                            if text.strip():
-                                if page_num > 0:
-                                    word_doc.add_page_break()
-                                word_doc.add_paragraph(f"--- Page {page_num + 1} ---")
-                                word_doc.add_paragraph(text)
-                                conversion_stats["text_chars"] += len(text)
-                        
-                        conversion_stats["pages"] = len(doc)
-                        doc.close()
-                        word_doc.save(str(temp_docx))
-                        
-                        conversion_success = True
-                        conversion_method = "pymupdf_basic"
-                        logger.info("Basic text extraction successful")
-                        
-                    except ImportError:
-                        logger.error("python-docx not available for fallback")
-                        
-                except Exception as fallback_error:
-                    logger.error(f"Fallback conversion failed: {fallback_error}")
         
         if not conversion_success:
             return jsonify({
@@ -641,6 +1329,7 @@ def pdf_to_docx():
         }), 500
 
 @app.route('/compress-pdf', methods=['POST'])
+@rate_limit('compress')
 @enhanced_error_handler
 def compress_pdf():
     """
@@ -649,7 +1338,7 @@ def compress_pdf():
     """
     logger.info("PDF compression request received")
     
-    if not (GHOSTSCRIPT_AVAILABLE or PYMUPDF_AVAILABLE):
+    if not (SYSTEM_TOOLS['ghostscript']['available'] or PYMUPDF_AVAILABLE):
         return jsonify({
             "error": "PDF compression not available. Install Ghostscript or PyMuPDF"
         }), 500
@@ -676,7 +1365,7 @@ def compress_pdf():
     try:
         # Read file content and generate hash
         file_content = file.read()
-        file_hash = get_file_hash(file_content)
+        file_hash = CacheManager.get_file_hash(file_content)
         original_size = len(file_content)
         
         # Generate filenames
@@ -733,32 +1422,11 @@ def compress_pdf():
         compression_stats = {"original_size": original_size, "compressed_size": 0, "method": ""}
         
         # Method 1: Try Ghostscript (preferred for compression)
-        if GHOSTSCRIPT_AVAILABLE and not compression_success:
+        if SYSTEM_TOOLS['ghostscript']['available'] and not compression_success:
             try:
                 logger.info(f"Attempting compression with Ghostscript (quality: {quality})")
                 
-                # Find Ghostscript executable
-                gs_cmd = None
-                gs_paths = [
-                    r'C:\Program Files\gs\gs10.05.1\bin\gswin64c.exe',
-                    r'C:\Program Files\gs\gs9.56.1\bin\gswin64c.exe',
-                    'gs',  # Try system PATH
-                    'gswin64c',
-                    'gswin32c'
-                ]
-                
-                for path in gs_paths:
-                    try:
-                        result = subprocess.run([path, '--version'], 
-                                              capture_output=True, text=True, timeout=5)
-                        if result.returncode == 0:
-                            gs_cmd = path
-                            break
-                    except (subprocess.SubprocessError, FileNotFoundError):
-                        continue
-                
-                if not gs_cmd:
-                    raise FileNotFoundError("Ghostscript executable not found")
+                gs_cmd = SYSTEM_TOOLS['ghostscript']['path']
                 
                 # Enhanced Ghostscript command with better compression
                 cmd = [
@@ -832,16 +1500,12 @@ def compress_pdf():
                 # Quality-based compression parameters
                 if quality == 'low':
                     deflate_level = 9
-                    image_quality = 50
                 elif quality == 'medium':
                     deflate_level = 6
-                    image_quality = 70
                 elif quality == 'high':
                     deflate_level = 3
-                    image_quality = 85
                 else:  # max
                     deflate_level = 1
-                    image_quality = 95
                 
                 # Advanced compression options
                 save_options = {
@@ -856,65 +1520,6 @@ def compress_pdf():
                     "expand": 0,  # Don't expand content streams
                     "compression": deflate_level
                 }
-                
-                # For lower quality, apply image compression
-                if quality in ['low', 'medium']:
-                    # Process each page for image optimization
-                    for page_num in range(len(doc)):
-                        page = doc.load_page(page_num)
-                        
-                        # Get images on page
-                        image_list = page.get_images()
-                        
-                        for img_index, img in enumerate(image_list):
-                            try:
-                                # Extract image
-                                xref = img[0]
-                                base_image = doc.extract_image(xref)
-                                image_bytes = base_image["image"]
-                                image_ext = base_image["ext"]
-                                
-                                # Compress image if it's large
-                                if len(image_bytes) > 50000:  # > 50KB
-                                    from PIL import Image
-                                    import io
-                                    
-                                    # Open image with Pillow
-                                    pil_image = Image.open(io.BytesIO(image_bytes))
-                                    
-                                    # Resize if too large
-                                    max_dimension = 1024 if quality == 'low' else 1536
-                                    if max(pil_image.size) > max_dimension:
-                                        ratio = max_dimension / max(pil_image.size)
-                                        new_size = tuple(int(dim * ratio) for dim in pil_image.size)
-                                        pil_image = pil_image.resize(new_size, Image.Resampling.LANCZOS)
-                                    
-                                    # Convert to RGB if needed
-                                    if pil_image.mode not in ['RGB', 'L']:
-                                        pil_image = pil_image.convert('RGB')
-                                    
-                                    # Save with compression
-                                    output_buffer = io.BytesIO()
-                                    save_format = 'JPEG' if image_ext.lower() in ['jpg', 'jpeg'] else 'PNG'
-                                    
-                                    if save_format == 'JPEG':
-                                        pil_image.save(output_buffer, format=save_format, 
-                                                     quality=image_quality, optimize=True)
-                                    else:
-                                        pil_image.save(output_buffer, format=save_format, 
-                                                     optimize=True, compress_level=9)
-                                    
-                                    compressed_image_bytes = output_buffer.getvalue()
-                                    
-                                    # Replace image if compression helped
-                                    if len(compressed_image_bytes) < len(image_bytes):
-                                        # This would require more complex PyMuPDF operations
-                                        # For now, just log the potential savings
-                                        savings = len(image_bytes) - len(compressed_image_bytes)
-                                        logger.info(f"Image {img_index} could be reduced by {savings} bytes")
-                                        
-                            except Exception as img_error:
-                                logger.warning(f"Failed to compress image {img_index}: {img_error}")
                 
                 # Save with optimizations
                 doc.save(str(temp_output), **save_options)
@@ -1005,6 +1610,8 @@ def compress_pdf():
         }), 500
 
 @app.route('/compress-image', methods=['POST'])
+@rate_limit('compress')
+@enhanced_error_handler
 def compress_image():
     """
     Compress image files using Pillow
@@ -1012,35 +1619,33 @@ def compress_image():
     """
     logger.info("Image compression request received")
     
-    if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
+    if not PIL_AVAILABLE:
+        return jsonify({
+            "error": "Image compression not available. Install Pillow"
+        }), 500
+    
+    # Validate file upload
+    try:
+        validate_file_upload(request.files.get('file'), ['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff'], max_size_mb=50)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     
     file = request.files['file']
     quality = int(request.form.get('quality', 85))  # Default quality 85%
     force_compression = request.form.get('force', 'false').lower() == 'true'
     
-    if file.filename == '':
-        return jsonify({"error": "No file selected"}), 400
-    
-    # Supported image formats
-    supported_formats = ['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff']
-    file_ext = Path(file.filename).suffix.lower()
-    
-    if file_ext not in supported_formats:
-        return jsonify({"error": f"Unsupported format. Supported: {', '.join(supported_formats)}"}), 400
-    
     try:
-        from PIL import Image
         import io
         
         # Read file content and generate hash
         file_content = file.read()
-        file_hash = get_file_hash(file_content)
+        file_hash = CacheManager.get_file_hash(file_content)
         original_size = len(file_content)
         
         # Generate filenames
         original_name = secure_filename(file.filename)
         base_name = Path(original_name).stem
+        file_ext = Path(original_name).suffix.lower()
         output_filename = f"{base_name}_compressed{file_ext}"
         
         # Check cache with quality suffix
@@ -1138,6 +1743,8 @@ def compress_image():
         return jsonify({"error": f"Compression failed: {str(e)}"}), 500
 
 @app.route('/batch-process', methods=['POST'])
+@rate_limit('batch_process')
+@enhanced_error_handler
 def batch_process():
     """
     Batch process multiple files
@@ -1179,9 +1786,9 @@ def batch_process():
                     if file_ext == '.pdf':
                         # Auto: compress PDF
                         current_op = 'compress'
-                    elif file_ext == '.docx':
-                        # Auto: convert DOCX to PDF
-                        current_op = 'convert_to_pdf'
+                    elif file_ext in ['.jpg', '.jpeg', '.png', '.webp']:
+                        # Auto: compress image
+                        current_op = 'compress_image'
                     else:
                         errors.append(f"{original_name}: Unsupported file type")
                         continue
@@ -1190,11 +1797,10 @@ def batch_process():
                 
                 # Process file based on operation
                 if current_op == 'compress' and file_ext == '.pdf':
-                    # Simulate compression endpoint logic
+                    # Simple PDF compression for batch
                     file_content = file.read()
                     temp_file = batch_dir / f"compressed_{original_name}"
                     
-                    # For batch, use simple PyMuPDF compression
                     if PYMUPDF_AVAILABLE:
                         temp_input = batch_dir / f"input_{original_name}"
                         with open(temp_input, 'wb') as f:
@@ -1205,39 +1811,38 @@ def batch_process():
                         doc.close()
                         
                         processed_files.append(str(temp_file))
+                        temp_input.unlink()
                     else:
-                        errors.append(f"{original_name}: Compression not available")
+                        errors.append(f"{original_name}: PDF compression not available")
                 
-                elif current_op == 'convert_to_pdf' and file_ext == '.docx':
-                    # Simulate DOCX to PDF conversion
-                    if False:  # LibreOffice not available in this setup
+                elif current_op == 'compress_image' and file_ext in ['.jpg', '.jpeg', '.png', '.webp']:
+                    # Simple image compression for batch
+                    if PIL_AVAILABLE:
                         file_content = file.read()
-                        temp_input = batch_dir / original_name
+                        import io
                         
-                        with open(temp_input, 'wb') as f:
-                            f.write(file_content)
+                        img = Image.open(io.BytesIO(file_content))
+                        temp_file = batch_dir / f"compressed_{original_name}"
                         
-                        cmd = [
-                            'libreoffice',
-                            '--headless',
-                            '--convert-to', 'pdf',
-                            '--outdir', str(batch_dir),
-                            str(temp_input)
-                        ]
+                        # Convert RGBA to RGB if saving as JPEG
+                        if file_ext.lower() in ['.jpg', '.jpeg'] and img.mode in ('RGBA', 'LA', 'P'):
+                            background = Image.new('RGB', img.size, (255, 255, 255))
+                            if img.mode == 'P':
+                                img = img.convert('RGBA')
+                            background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                            img = background
                         
-                        result = subprocess.run(cmd, capture_output=True, timeout=60)
+                        # Save with compression
+                        save_kwargs = {'quality': 85, 'optimize': True}
+                        if file_ext.lower() in ['.jpg', '.jpeg']:
+                            save_kwargs['progressive'] = True
+                        elif file_ext.lower() == '.png':
+                            save_kwargs = {'optimize': True, 'compress_level': 9}
                         
-                        if result.returncode == 0:
-                            pdf_name = Path(original_name).stem + '.pdf'
-                            pdf_file = batch_dir / pdf_name
-                            if pdf_file.exists():
-                                processed_files.append(str(pdf_file))
-                            else:
-                                errors.append(f"{original_name}: PDF not generated")
-                        else:
-                            errors.append(f"{original_name}: Conversion failed")
+                        img.save(str(temp_file), **save_kwargs)
+                        processed_files.append(str(temp_file))
                     else:
-                        errors.append(f"{original_name}: LibreOffice not available in this setup")
+                        errors.append(f"{original_name}: Image compression not available")
                 
                 else:
                     errors.append(f"{original_name}: Operation not supported for this file type")
@@ -1286,6 +1891,7 @@ def batch_process():
         return jsonify({"error": f"Batch processing failed: {str(e)}"}), 500
 
 @app.route('/pdf-merge', methods=['POST'])
+@enhanced_error_handler
 def pdf_merge():
     """
     Merge multiple PDF files into a single PDF
@@ -1310,8 +1916,6 @@ def pdf_merge():
         return jsonify({"error": "Maximum 20 files allowed for merging"}), 400
     
     try:
-        import fitz
-        
         # Create merged PDF
         merged_doc = fitz.open()
         
@@ -1371,8 +1975,8 @@ def pdf_merge():
 @enhanced_error_handler
 def pdf_split():
     """
-    Split PDF into multiple files by pages with enhanced functionality
-    Features: Page range splitting, individual page extraction, preview support
+    Split PDF into multiple files by pages
+    Features: Page range splitting, individual page extraction
     """
     logger.info("PDF split request received")
     
@@ -1393,11 +1997,9 @@ def pdf_split():
     pages_per_split = request.form.get('pages_per_split', '1')  # for bulk splitting
     
     try:
-        import fitz
-        
         # Read file content
         file_content = file.read()
-        file_hash = get_file_hash(file_content)
+        file_hash = CacheManager.get_file_hash(file_content)
         
         temp_pdf = TEMP_DIR / f"{file_hash}_input.pdf"
         
@@ -1422,7 +2024,6 @@ def pdf_split():
         if split_type == 'individual':
             # Split into individual pages
             ranges = [(i, i) for i in range(total_pages)]
-            logger.info(f"Individual split: {len(ranges)} pages")
             
         elif split_type == 'bulk' and pages_per_split.isdigit():
             # Split into chunks of specified size
@@ -1433,8 +2034,7 @@ def pdf_split():
             for i in range(0, total_pages, pages_per_chunk):
                 end_page = min(i + pages_per_chunk - 1, total_pages - 1)
                 ranges.append((i, end_page))
-            logger.info(f"Bulk split: {len(ranges)} chunks of {pages_per_chunk} pages each")
-            
+                
         elif split_type == 'range' and page_ranges:
             # Parse custom page ranges
             try:
@@ -1464,8 +2064,6 @@ def pdf_split():
                             }), 400
                         ranges.append((page_num, page_num))
                         
-                logger.info(f"Custom range split: {len(ranges)} ranges")
-                
             except ValueError as ve:
                 doc.close()
                 return jsonify({
@@ -1493,13 +2091,6 @@ def pdf_split():
         zip_path = TEMP_DIR / zip_filename
         
         split_files = []
-        split_stats = {
-            "total_pages": total_pages,
-            "split_count": len(ranges),
-            "split_type": split_type,
-            "success_count": 0,
-            "failed_count": 0
-        }
         
         # Process each range
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as zipf:
@@ -1538,39 +2129,27 @@ def pdf_split():
                             "pages": page_info,
                             "size": split_path.stat().st_size
                         })
-                        split_stats["success_count"] += 1
                         logger.info(f"Created split file: {split_filename} ({page_info})")
                         
                         # Cleanup temp split file
                         split_path.unlink()
                     else:
                         logger.warning(f"Failed to create split file for {page_info}")
-                        split_stats["failed_count"] += 1
                         
                 except Exception as split_error:
                     logger.error(f"Error creating split for range {start+1}-{end+1}: {split_error}")
-                    split_stats["failed_count"] += 1
-                    track_error("PDF_SPLIT_RANGE_ERROR", f"Range {start+1}-{end+1}: {str(split_error)}")
         
         doc.close()
         
         # Check if any splits were successful
-        if split_stats["success_count"] == 0:
+        if not split_files:
             return jsonify({
                 "error": "Failed to create any split files",
-                "details": "All page ranges failed to process",
-                "stats": split_stats
-            }), 500
-        
-        # Verify ZIP file was created
-        if not zip_path.exists() or zip_path.stat().st_size == 0:
-            return jsonify({
-                "error": "Failed to create output archive",
-                "details": "ZIP file creation failed"
+                "details": "All page ranges failed to process"
             }), 500
         
         # Log successful split
-        logger.info(f"Successfully split PDF: {split_stats}")
+        logger.info(f"Successfully split PDF: {len(split_files)} files created")
         
         @after_this_request
         def cleanup(response):
@@ -1579,9 +2158,6 @@ def pdf_split():
                     temp_pdf.unlink()
                 if zip_path.exists():
                     zip_path.unlink()
-                # Clean up any remaining split files
-                for temp_file in TEMP_DIR.glob(f"{file_hash}_*.pdf"):
-                    temp_file.unlink()
             except Exception as e:
                 logger.warning(f"Cleanup error: {e}")
             return response
@@ -1594,9 +2170,8 @@ def pdf_split():
             mimetype='application/zip'
         )
         
-        response.headers['X-Total-Pages'] = str(split_stats["total_pages"])
-        response.headers['X-Split-Count'] = str(split_stats["success_count"])
-        response.headers['X-Failed-Count'] = str(split_stats["failed_count"])
+        response.headers['X-Total-Pages'] = str(total_pages)
+        response.headers['X-Split-Count'] = str(len(split_files))
         response.headers['X-Split-Type'] = split_type
         
         return response
@@ -1609,56 +2184,127 @@ def pdf_split():
             "code": "SPLIT_ERROR"
         }), 500
 
-@app.route('/clear-cache', methods=['POST'])
-def clear_cache():
-    """Clear the cache directory"""
-    try:
-        cache_files = list(CACHE_DIR.glob('*'))
-        temp_files = list(TEMP_DIR.glob('*'))
-        
-        for file_path in cache_files + temp_files:
-            if file_path.is_file():
-                file_path.unlink()
-            elif file_path.is_dir():
-                shutil.rmtree(file_path)
-        
-        logger.info(f"Cache cleared: {len(cache_files)} cache files, {len(temp_files)} temp files")
-        
-        return jsonify({
-            "message": "Cache cleared successfully",
-            "files_removed": len(cache_files) + len(temp_files)
-        })
-        
-    except Exception as e:
-        logger.error(f"Cache clear error: {str(e)}")
-        return jsonify({"error": f"Cache clear failed: {str(e)}"}), 500
-
+# Enhanced error handlers
 @app.errorhandler(413)
 def too_large(e):
-    return jsonify({"error": "File too large. Maximum size is 500MB"}), 413
+    return jsonify({
+        "error": "File too large",
+        "code": "FILE_TOO_LARGE",
+        "max_size": f"{MAX_FILE_SIZE // (1024**2)}MB",
+        "suggestion": "Please use a smaller file"
+    }), 413
+
+@app.errorhandler(429)
+def rate_limited(e):
+    return jsonify({
+        "error": "Too many requests",
+        "code": "RATE_LIMITED",
+        "suggestion": "Please wait before making another request",
+        "retry_after": 60
+    }), 429
 
 @app.errorhandler(404)
 def not_found(e):
-    return jsonify({"error": "Endpoint not found"}), 404
+    return jsonify({
+        "error": "Endpoint not found",
+        "code": "NOT_FOUND",
+        "available_endpoints": [
+            "/health", "/stats", "/pdf-to-docx", "/compress-pdf",
+            "/compress-image", "/batch-process", "/pdf-merge", 
+            "/pdf-split", "/clear-cache"
+        ]
+    }), 404
 
-@app.errorhandler(500)
-def internal_error(e):
-    return jsonify({"error": "Internal server error"}), 500
+def run_startup_checks():
+    """Run comprehensive startup checks"""
+    logger.info("🚀 Starting production backend...")
+    logger.info(f"📊 Max file size: {MAX_FILE_SIZE / (1024*1024):.1f} MB")
+    logger.info(f"⚡ Max concurrent operations: {MAX_CONCURRENT_OPERATIONS}")
+    logger.info(f"💾 Cache directory: {CACHE_DIR}")
+    logger.info(f"� Temp directory: {TEMP_DIR}")
+    
+    # Check library availability
+    libs = {
+        "PyMuPDF": PYMUPDF_AVAILABLE,
+        "pdf2docx": PDF2DOCX_AVAILABLE, 
+        "Pillow": PIL_AVAILABLE,
+        "psutil": PSUTIL_AVAILABLE,
+        "python-magic": MAGIC_AVAILABLE
+    }
+    
+    for lib, available in libs.items():
+        status = "✅" if available else "❌"
+        logger.info(f"{status} {lib}: {'Available' if available else 'Not available'}")
+    
+    # Verify critical libraries
+    if not (PYMUPDF_AVAILABLE or PDF2DOCX_AVAILABLE):
+        logger.error("❌ CRITICAL: No PDF processing libraries available!")
+        return False
+    
+    if not PIL_AVAILABLE:
+        logger.warning("⚠️  WARNING: Pillow not available, image processing limited")
+    
+    # Test directory permissions
+    for directory in [CACHE_DIR, TEMP_DIR, UPLOADS_DIR]:
+        try:
+            test_file = directory / f"test_{int(time.time())}.tmp"
+            test_file.write_text("test")
+            test_file.unlink()
+            logger.info(f"✅ {directory}: Read/write permissions OK")
+        except Exception as e:
+            logger.error(f"❌ {directory}: Permission error - {e}")
+            return False
+    
+    logger.info("✅ All startup checks passed!")
+    return True
+
+def start_background_cleanup():
+    """Start background cleanup thread"""
+    def cleanup_worker():
+        while True:
+            try:
+                # Clean up old cache files
+                cache_manager.cleanup_expired_files()
+                
+                # Clean up temp files older than 1 hour
+                cleanup_temp_files(max_age_hours=1)
+                
+                # Sleep for 30 minutes before next cleanup
+                time.sleep(30 * 60)
+                
+            except Exception as e:
+                logger.error(f"Background cleanup error: {e}")
+                time.sleep(60)  # Wait 1 minute on error
+    
+    cleanup_thread = threading.Thread(target=cleanup_worker, daemon=True)
+    cleanup_thread.start()
+    logger.info("🧹 Background cleanup thread started")
 
 if __name__ == '__main__':
-    # Azure App Service compatible startup
+    # Run startup checks
+    if not run_startup_checks():
+        logger.error("❌ Startup checks failed, exiting...")
+        exit(1)
+    
+    # Start background cleanup
+    start_background_cleanup()
+    
+    # Get port from environment or use default
     port = int(os.environ.get('PORT', 5000))
-    debug = os.environ.get('FLASK_ENV') != 'production'
+    debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     
-    logger.info(f"🚀 Starting Flask app on port {port} (debug={debug})")
+    logger.info(f"🌐 Starting server on port {port} (debug={'on' if debug else 'off'})")
     
+    # In production, use a proper WSGI server like Gunicorn
+    # This is just for development/testing
     try:
         app.run(
-            debug=debug, 
-            host='0.0.0.0', 
+            host='0.0.0.0',
             port=port,
-            threaded=True
+            debug=debug,
+            threaded=True,
+            use_reloader=False  # Disable reloader in production
         )
     except Exception as e:
-        logger.error(f"❌ Failed to start Flask app: {e}")
+        logger.error(f"❌ Failed to start server: {e}")
         raise
