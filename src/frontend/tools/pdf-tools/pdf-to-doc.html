@@ -677,7 +677,7 @@
             </div>
             <div class="grid md:grid-cols-2 gap-4">
                 <!-- Client-side Mode -->
-                <div class="conversion-mode-card bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-600 cursor-pointer transition-all hover:border-blue-400 dark:hover:border-blue-500" onclick="selectConversionMode('client')">
+                <div class="conversion-mode-card bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-blue-200 dark:border-blue-700 cursor-pointer transition-all hover:border-blue-400 dark:hover:border-blue-500" onclick="selectConversionMode('client')">
                     <div class="flex items-center mb-3">
                         <input type="radio" id="client-mode" name="conversion-mode" value="client" checked class="mr-3">
                         <label for="client-mode" class="text-lg font-semibold text-gray-900 dark:text-white cursor-pointer">Client-side Processing</label>
@@ -705,7 +705,7 @@
                 </div>
                 
                 <!-- Server-side Mode -->
-                <div class="conversion-mode-card bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-purple-200 dark:border-purple-700 cursor-pointer transition-all hover:border-purple-400 dark:hover:border-purple-500 ring-2 ring-purple-300 dark:ring-purple-600" onclick="selectConversionMode('server')">
+                <div class="conversion-mode-card bg-white dark:bg-gray-800 rounded-xl p-6 border-2 border-gray-200 dark:border-gray-600 cursor-pointer transition-all hover:border-purple-400 dark:hover:border-purple-500" onclick="selectConversionMode('server')">
                     <div class="flex items-center mb-3">
                         <input type="radio" id="server-mode" name="conversion-mode" value="server" class="mr-3">
                         <label for="server-mode" class="text-lg font-semibold text-gray-900 dark:text-white cursor-pointer">Server Processing</label>
@@ -972,7 +972,7 @@
         let currentFiles = [];
         let processedFiles = [];
         let currentTool = 'pdf-to-doc';
-        let conversionMode = 'server'; // 'client' or 'server' - Default to server for real DOCX conversion
+        let conversionMode = 'client'; // 'client' or 'server'
         
         // Configuration for different deployment modes
         const DEPLOYMENT_MODE = 'WITH_BACKEND'; // Options: 'CLIENT_ONLY', 'WITH_BACKEND', 'RENDER'
