@@ -38,7 +38,6 @@ cryptography>=41.0.0
 
 # File Type Detection & Security
 python-magic>=0.4.27
-python-magic-bin>=0.4.14
 
 # System Resource Monitoring & Performance
 psutil>=5.9.6
