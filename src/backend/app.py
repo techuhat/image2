@@ -1040,10 +1040,6 @@ def get_metrics():
         }
     
     return jsonify(metrics)
-        })
-    except Exception as e:
-        logger.error(f"Stats endpoint error: {e}")
-        return jsonify({"error": str(e)}), 500
 
 # Enhanced cache management endpoint
 @app.route('/clear-cache', methods=['POST'])
