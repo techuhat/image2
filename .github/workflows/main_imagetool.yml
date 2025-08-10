@@ -265,11 +265,11 @@ jobs:
           # Test critical endpoints
           echo "🎯 Testing application endpoints..."
           
-          test_endpoint "${{ env.AZURE_WEBAPP_URL }}/ping" "Ping"
-          ping_result=$?
-          
           test_endpoint "${{ env.AZURE_WEBAPP_URL }}/health" "Health Check"
           health_result=$?
+          
+          test_endpoint "${{ env.AZURE_WEBAPP_URL }}/stats" "System Stats"
+          stats_result=$?
           
           # Test root endpoint
           test_endpoint "${{ env.AZURE_WEBAPP_URL }}/" "Root Application"
@@ -279,13 +279,13 @@ jobs:
           echo ""
           echo "📊 DEPLOYMENT TEST SUMMARY:"
           echo "================================"
-          [ $ping_result -eq 0 ] && echo "✅ Ping endpoint: WORKING" || echo "❌ Ping endpoint: FAILED"
-          [ $health_result -eq 0 ] && echo "✅ Health endpoint: WORKING" || echo "❌ Health endpoint: FAILED"  
+          [ $health_result -eq 0 ] && echo "✅ Health endpoint: WORKING" || echo "❌ Health endpoint: FAILED"
+          [ $stats_result -eq 0 ] && echo "✅ Stats endpoint: WORKING" || echo "❌ Stats endpoint: FAILED"  
           [ $root_result -eq 0 ] && echo "✅ Root endpoint: WORKING" || echo "❌ Root endpoint: FAILED"
           echo "================================"
           
           # Overall result
-          if [ $ping_result -eq 0 ] && [ $health_result -eq 0 ]; then
+          if [ $health_result -eq 0 ] && [ $stats_result -eq 0 ]; then
             echo "🎉 DEPLOYMENT SUCCESSFUL! All critical endpoints are working."
             exit 0
           else
