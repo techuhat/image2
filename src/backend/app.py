@@ -355,10 +355,11 @@ def health_check():
     })
 
 @app.route('/pdf-to-docx', methods=['POST'])
+@enhanced_error_handler
 def pdf_to_docx():
     """
-    Convert PDF to DOCX using pdf2docx or PyMuPDF
-    Features: File caching, multiple conversion methods
+    Convert PDF to DOCX using pdf2docx or PyMuPDF with advanced text and image extraction
+    Features: File caching, multiple conversion methods, image preservation
     """
     logger.info("PDF to DOCX conversion request received")
     
@@ -367,17 +368,15 @@ def pdf_to_docx():
             "error": "PDF to DOCX conversion not available. Install pdf2docx or PyMuPDF"
         }), 500
     
-    if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
+    # Validate file upload
+    try:
+        validate_file_upload(request.files.get('file'), ['.pdf'], max_size_mb=100)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     
     file = request.files['file']
     force_conversion = request.form.get('force', 'false').lower() == 'true'
-    
-    if file.filename == '':
-        return jsonify({"error": "No file selected"}), 400
-    
-    if not file.filename.lower().endswith('.pdf'):
-        return jsonify({"error": "Only PDF files are supported"}), 400
+    include_images = request.form.get('images', 'true').lower() == 'true'
     
     try:
         # Read file content and generate hash
@@ -390,7 +389,8 @@ def pdf_to_docx():
         output_filename = f"{base_name}.docx"
         
         # Check cache
-        cached_file = CACHE_DIR / f"{file_hash}_{output_filename}"
+        cache_key = f"{file_hash}_{include_images}_{output_filename}"
+        cached_file = CACHE_DIR / cache_key
         
         if cached_file.exists() and not force_conversion:
             logger.info(f"Returning cached DOCX: {output_filename}")
@@ -411,58 +411,200 @@ def pdf_to_docx():
         
         conversion_success = False
         conversion_method = ""
+        conversion_stats = {"pages": 0, "images": 0, "text_chars": 0}
         
-        # Method 1: Try pdf2docx (most accurate)
+        # Method 1: Try pdf2docx (most accurate with layout preservation)
         if PDF2DOCX_AVAILABLE and not conversion_success:
             try:
                 logger.info("Attempting conversion with pdf2docx")
+                
+                # Configure pdf2docx for better conversion
                 converter = Converter(str(temp_pdf))
-                converter.convert(str(temp_docx))
+                
+                # Convert with advanced options
+                converter.convert(
+                    str(temp_docx),
+                    start=0,
+                    end=None,
+                    pages=None,
+                    multi_processing=False,  # Disable for stability
+                    cpu_count=1
+                )
                 converter.close()
-                conversion_success = True
-                conversion_method = "pdf2docx"
-                logger.info("Conversion successful with pdf2docx")
+                
+                # Check if conversion was successful
+                if temp_docx.exists() and temp_docx.stat().st_size > 0:
+                    conversion_success = True
+                    conversion_method = "pdf2docx"
+                    
+                    # Get conversion stats
+                    doc = fitz.open(str(temp_pdf))
+                    conversion_stats["pages"] = len(doc)
+                    doc.close()
+                    
+                    logger.info("Conversion successful with pdf2docx (with layout preservation)")
+                else:
+                    logger.warning("pdf2docx created empty file")
+                    
             except Exception as e:
                 logger.warning(f"pdf2docx conversion failed: {e}")
+                if temp_docx.exists():
+                    temp_docx.unlink()
         
-        # Method 2: Try PyMuPDF (fallback)
+        # Method 2: Try enhanced PyMuPDF with proper DOCX generation
         if PYMUPDF_AVAILABLE and not conversion_success:
             try:
-                logger.info("Attempting conversion with PyMuPDF")
-                import docx
+                logger.info("Attempting conversion with enhanced PyMuPDF")
+                
+                # Import python-docx for proper DOCX creation
+                try:
+                    from docx import Document
+                    from docx.shared import Inches
+                    from docx.enum.text import WD_ALIGN_PARAGRAPH
+                    import io
+                    import base64
+                except ImportError:
+                    logger.warning("python-docx not available, using basic text extraction")
+                    # Fallback to basic text extraction
+                    raise ImportError("python-docx required for advanced conversion")
                 
                 doc = fitz.open(str(temp_pdf))
-                word_doc = docx.Document()
+                word_doc = Document()
+                
+                # Add document metadata
+                core_props = word_doc.core_properties
+                core_props.title = f"Converted from {original_name}"
+                core_props.author = "ImagePDF Toolkit"
+                core_props.comments = f"Converted using PyMuPDF on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                
+                total_text_chars = 0
+                total_images = 0
                 
                 for page_num in range(len(doc)):
                     page = doc.load_page(page_num)
-                    text = page.get_text()
                     
-                    if text.strip():
-                        word_doc.add_paragraph(text)
-                        if page_num < len(doc) - 1:
-                            word_doc.add_page_break()
+                    # Add page header
+                    if page_num > 0:
+                        word_doc.add_page_break()
+                    
+                    # Extract text with better formatting
+                    text_dict = page.get_text("dict")
+                    
+                    # Process text blocks
+                    for block in text_dict.get("blocks", []):
+                        if "lines" in block:  # Text block
+                            block_text = ""
+                            for line in block["lines"]:
+                                line_text = ""
+                                for span in line.get("spans", []):
+                                    line_text += span.get("text", "")
+                                block_text += line_text + "\n"
+                            
+                            if block_text.strip():
+                                paragraph = word_doc.add_paragraph(block_text.strip())
+                                total_text_chars += len(block_text)
+                        
+                        elif include_images and "image" in block:  # Image block
+                            try:
+                                # Extract image
+                                image_index = block["image"]
+                                base_image = doc.extract_image(image_index)
+                                image_bytes = base_image["image"]
+                                
+                                # Add image to document
+                                image_stream = io.BytesIO(image_bytes)
+                                paragraph = word_doc.add_paragraph()
+                                run = paragraph.runs[0] if paragraph.runs else paragraph.add_run()
+                                
+                                # Calculate image size (max width 6 inches)
+                                max_width = Inches(6)
+                                run.add_picture(image_stream, width=max_width)
+                                
+                                total_images += 1
+                                logger.info(f"Added image {total_images} from page {page_num + 1}")
+                                
+                            except Exception as img_error:
+                                logger.warning(f"Failed to extract image from page {page_num + 1}: {img_error}")
+                                # Add placeholder text for failed image
+                                word_doc.add_paragraph(f"[Image {total_images + 1} - extraction failed]")
                 
                 doc.close()
+                
+                # Save the document
                 word_doc.save(str(temp_docx))
+                
                 conversion_success = True
-                conversion_method = "pymupdf"
-                logger.info("Conversion successful with PyMuPDF")
+                conversion_method = "pymupdf_enhanced"
+                conversion_stats = {
+                    "pages": len(doc),
+                    "images": total_images,
+                    "text_chars": total_text_chars
+                }
+                
+                logger.info(f"Enhanced PyMuPDF conversion successful: {conversion_stats}")
                 
             except Exception as e:
-                logger.warning(f"PyMuPDF conversion failed: {e}")
+                logger.warning(f"Enhanced PyMuPDF conversion failed: {e}")
+                
+                # Fallback to basic text extraction
+                try:
+                    logger.info("Falling back to basic text extraction")
+                    doc = fitz.open(str(temp_pdf))
+                    
+                    # Use simple docx creation if available
+                    try:
+                        from docx import Document
+                        word_doc = Document()
+                        
+                        for page_num in range(len(doc)):
+                            page = doc.load_page(page_num)
+                            text = page.get_text()
+                            
+                            if text.strip():
+                                if page_num > 0:
+                                    word_doc.add_page_break()
+                                word_doc.add_paragraph(f"--- Page {page_num + 1} ---")
+                                word_doc.add_paragraph(text)
+                                conversion_stats["text_chars"] += len(text)
+                        
+                        conversion_stats["pages"] = len(doc)
+                        doc.close()
+                        word_doc.save(str(temp_docx))
+                        
+                        conversion_success = True
+                        conversion_method = "pymupdf_basic"
+                        logger.info("Basic text extraction successful")
+                        
+                    except ImportError:
+                        logger.error("python-docx not available for fallback")
+                        
+                except Exception as fallback_error:
+                    logger.error(f"Fallback conversion failed: {fallback_error}")
         
         if not conversion_success:
             return jsonify({
                 "error": "All conversion methods failed",
-                "details": "PDF may be corrupted, password-protected, or contain unsupported content"
+                "details": "PDF may be corrupted, password-protected, or contain unsupported content",
+                "suggestions": [
+                    "Ensure PDF is not password-protected",
+                    "Try with a different PDF file",
+                    "Check if PDF contains extractable text"
+                ]
+            }), 500
+        
+        # Verify output file
+        if not temp_docx.exists() or temp_docx.stat().st_size == 0:
+            return jsonify({
+                "error": "Conversion produced empty file",
+                "details": "The PDF might not contain extractable content"
             }), 500
         
         # Copy to cache
         shutil.copy2(temp_docx, cached_file)
         
-        # Log conversion
+        # Log successful conversion
         logger.info(f"Successfully converted {original_name} to DOCX using {conversion_method}")
+        logger.info(f"Conversion stats: {conversion_stats}")
         
         @after_this_request
         def cleanup(response):
@@ -475,22 +617,35 @@ def pdf_to_docx():
                 logger.warning(f"Cleanup error: {e}")
             return response
         
-        return send_file(
+        # Return file with conversion stats in headers
+        response = send_file(
             cached_file,
             as_attachment=True,
             download_name=output_filename,
             mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         )
         
+        response.headers['X-Conversion-Method'] = conversion_method
+        response.headers['X-Pages-Processed'] = str(conversion_stats['pages'])
+        response.headers['X-Images-Extracted'] = str(conversion_stats['images'])
+        response.headers['X-Text-Characters'] = str(conversion_stats['text_chars'])
+        
+        return response
+        
     except Exception as e:
+        track_error("PDF_TO_DOCX_ERROR", str(e))
         logger.error(f"PDF to DOCX conversion error: {str(e)}")
-        return jsonify({"error": f"Conversion failed: {str(e)}"}), 500
+        return jsonify({
+            "error": f"Conversion failed: {str(e)}",
+            "code": "CONVERSION_ERROR"
+        }), 500
 
 @app.route('/compress-pdf', methods=['POST'])
+@enhanced_error_handler
 def compress_pdf():
     """
-    Compress PDF using Ghostscript or PyMuPDF
-    Features: Size optimization, quality control, smart caching
+    Compress PDF using Ghostscript or PyMuPDF with advanced optimization
+    Features: Size optimization, quality control, smart caching, image compression
     """
     logger.info("PDF compression request received")
     
@@ -499,8 +654,11 @@ def compress_pdf():
             "error": "PDF compression not available. Install Ghostscript or PyMuPDF"
         }), 500
     
-    if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
+    # Validate file upload
+    try:
+        validate_file_upload(request.files.get('file'), ['.pdf'], max_size_mb=100)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     
     file = request.files['file']
     force_compression = request.form.get('force', 'false').lower() == 'true'
@@ -515,12 +673,6 @@ def compress_pdf():
     quality = request.form.get('quality', 'medium').lower()
     gs_quality = quality_map.get(quality, '/ebook')
     
-    if file.filename == '':
-        return jsonify({"error": "No file selected"}), 400
-    
-    if not file.filename.lower().endswith('.pdf'):
-        return jsonify({"error": "Only PDF files are supported"}), 400
-    
     try:
         # Read file content and generate hash
         file_content = file.read()
@@ -533,7 +685,8 @@ def compress_pdf():
         output_filename = f"{base_name}_compressed.pdf"
         
         # Check cache with quality suffix
-        cached_file = CACHE_DIR / f"{file_hash}_{quality}_{output_filename}"
+        cache_key = f"{file_hash}_{quality}_{output_filename}"
+        cached_file = CACHE_DIR / cache_key
         
         if cached_file.exists() and not force_compression:
             compressed_size = cached_file.stat().st_size
@@ -550,6 +703,7 @@ def compress_pdf():
             response.headers['X-Compression-Ratio'] = f"{compression_ratio:.1f}%"
             response.headers['X-Original-Size'] = str(original_size)
             response.headers['X-Compressed-Size'] = str(compressed_size)
+            response.headers['X-Cached'] = 'true'
             return response
         
         # Check if file is already small enough
@@ -576,79 +730,218 @@ def compress_pdf():
         
         compression_success = False
         compression_method = ""
+        compression_stats = {"original_size": original_size, "compressed_size": 0, "method": ""}
         
         # Method 1: Try Ghostscript (preferred for compression)
         if GHOSTSCRIPT_AVAILABLE and not compression_success:
             try:
                 logger.info(f"Attempting compression with Ghostscript (quality: {quality})")
                 
+                # Find Ghostscript executable
+                gs_cmd = None
+                gs_paths = [
+                    r'C:\Program Files\gs\gs10.05.1\bin\gswin64c.exe',
+                    r'C:\Program Files\gs\gs9.56.1\bin\gswin64c.exe',
+                    'gs',  # Try system PATH
+                    'gswin64c',
+                    'gswin32c'
+                ]
+                
+                for path in gs_paths:
+                    try:
+                        result = subprocess.run([path, '--version'], 
+                                              capture_output=True, text=True, timeout=5)
+                        if result.returncode == 0:
+                            gs_cmd = path
+                            break
+                    except (subprocess.SubprocessError, FileNotFoundError):
+                        continue
+                
+                if not gs_cmd:
+                    raise FileNotFoundError("Ghostscript executable not found")
+                
+                # Enhanced Ghostscript command with better compression
                 cmd = [
-                    'gs',
+                    gs_cmd,
                     '-sDEVICE=pdfwrite',
                     '-dCompatibilityLevel=1.4',
                     f'-dPDFSETTINGS={gs_quality}',
                     '-dNOPAUSE',
                     '-dQUIET',
                     '-dBATCH',
+                    '-dSAFER',
+                    '-dColorImageDownsampleType=/Bicubic',
+                    '-dGrayImageDownsampleType=/Bicubic',
+                    '-dMonoImageDownsampleType=/Bicubic',
+                    '-dOptimize=true',
+                    '-dEmbedAllFonts=true',
+                    '-dSubsetFonts=true',
+                    '-dCompressFonts=true',
+                    '-dDetectDuplicateImages=true',
                     f'-sOutputFile={temp_output}',
                     str(temp_input)
                 ]
                 
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+                # Add quality-specific settings
+                if quality == 'low':
+                    cmd.extend([
+                        '-dColorImageResolution=72',
+                        '-dGrayImageResolution=72',
+                        '-dMonoImageResolution=300',
+                        '-dDownsampleColorImages=true',
+                        '-dDownsampleGrayImages=true'
+                    ])
+                elif quality == 'medium':
+                    cmd.extend([
+                        '-dColorImageResolution=150',
+                        '-dGrayImageResolution=150',
+                        '-dMonoImageResolution=600'
+                    ])
+                elif quality == 'high':
+                    cmd.extend([
+                        '-dColorImageResolution=300',
+                        '-dGrayImageResolution=300',
+                        '-dMonoImageResolution=1200'
+                    ])
                 
-                if result.returncode == 0 and temp_output.exists():
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+                
+                if result.returncode == 0 and temp_output.exists() and temp_output.stat().st_size > 0:
                     compression_success = True
                     compression_method = "ghostscript"
+                    compression_stats["compressed_size"] = temp_output.stat().st_size
+                    compression_stats["method"] = f"Ghostscript ({quality})"
                     logger.info("Compression successful with Ghostscript")
                 else:
                     logger.warning(f"Ghostscript compression failed: {result.stderr}")
                     
             except subprocess.TimeoutExpired:
                 logger.warning("Ghostscript compression timeout")
+                track_error("GHOSTSCRIPT_TIMEOUT", "Ghostscript operation timed out")
             except Exception as e:
                 logger.warning(f"Ghostscript compression error: {e}")
+                track_error("GHOSTSCRIPT_ERROR", str(e))
         
-        # Method 2: Try PyMuPDF (fallback)
+        # Method 2: Try PyMuPDF (fallback with enhanced compression)
         if PYMUPDF_AVAILABLE and not compression_success:
             try:
-                logger.info("Attempting compression with PyMuPDF")
+                logger.info("Attempting compression with enhanced PyMuPDF")
                 
                 doc = fitz.open(str(temp_input))
                 
-                # Compression options based on quality
-                deflate_level = {
-                    'low': 9,
-                    'medium': 6,
-                    'high': 3,
-                    'max': 1
-                }.get(quality, 6)
+                # Quality-based compression parameters
+                if quality == 'low':
+                    deflate_level = 9
+                    image_quality = 50
+                elif quality == 'medium':
+                    deflate_level = 6
+                    image_quality = 70
+                elif quality == 'high':
+                    deflate_level = 3
+                    image_quality = 85
+                else:  # max
+                    deflate_level = 1
+                    image_quality = 95
                 
-                doc.save(
-                    str(temp_output),
-                    garbage=4,
-                    deflate=True,
-                    deflate_images=True,
-                    deflate_fonts=True,
-                    linear=True,
-                    clean=True,
-                    pretty=False,
-                    ascii=False,
-                    expand=0,
-                    compression=deflate_level
-                )
+                # Advanced compression options
+                save_options = {
+                    "garbage": 4,  # Remove unused objects
+                    "deflate": True,  # Enable deflate compression
+                    "deflate_images": True,  # Compress images
+                    "deflate_fonts": True,  # Compress fonts
+                    "linear": True,  # Optimize for web viewing
+                    "clean": True,  # Clean up document structure
+                    "pretty": False,  # Don't pretty-print (saves space)
+                    "ascii": False,  # Use binary encoding
+                    "expand": 0,  # Don't expand content streams
+                    "compression": deflate_level
+                }
                 
+                # For lower quality, apply image compression
+                if quality in ['low', 'medium']:
+                    # Process each page for image optimization
+                    for page_num in range(len(doc)):
+                        page = doc.load_page(page_num)
+                        
+                        # Get images on page
+                        image_list = page.get_images()
+                        
+                        for img_index, img in enumerate(image_list):
+                            try:
+                                # Extract image
+                                xref = img[0]
+                                base_image = doc.extract_image(xref)
+                                image_bytes = base_image["image"]
+                                image_ext = base_image["ext"]
+                                
+                                # Compress image if it's large
+                                if len(image_bytes) > 50000:  # > 50KB
+                                    from PIL import Image
+                                    import io
+                                    
+                                    # Open image with Pillow
+                                    pil_image = Image.open(io.BytesIO(image_bytes))
+                                    
+                                    # Resize if too large
+                                    max_dimension = 1024 if quality == 'low' else 1536
+                                    if max(pil_image.size) > max_dimension:
+                                        ratio = max_dimension / max(pil_image.size)
+                                        new_size = tuple(int(dim * ratio) for dim in pil_image.size)
+                                        pil_image = pil_image.resize(new_size, Image.Resampling.LANCZOS)
+                                    
+                                    # Convert to RGB if needed
+                                    if pil_image.mode not in ['RGB', 'L']:
+                                        pil_image = pil_image.convert('RGB')
+                                    
+                                    # Save with compression
+                                    output_buffer = io.BytesIO()
+                                    save_format = 'JPEG' if image_ext.lower() in ['jpg', 'jpeg'] else 'PNG'
+                                    
+                                    if save_format == 'JPEG':
+                                        pil_image.save(output_buffer, format=save_format, 
+                                                     quality=image_quality, optimize=True)
+                                    else:
+                                        pil_image.save(output_buffer, format=save_format, 
+                                                     optimize=True, compress_level=9)
+                                    
+                                    compressed_image_bytes = output_buffer.getvalue()
+                                    
+                                    # Replace image if compression helped
+                                    if len(compressed_image_bytes) < len(image_bytes):
+                                        # This would require more complex PyMuPDF operations
+                                        # For now, just log the potential savings
+                                        savings = len(image_bytes) - len(compressed_image_bytes)
+                                        logger.info(f"Image {img_index} could be reduced by {savings} bytes")
+                                        
+                            except Exception as img_error:
+                                logger.warning(f"Failed to compress image {img_index}: {img_error}")
+                
+                # Save with optimizations
+                doc.save(str(temp_output), **save_options)
                 doc.close()
-                compression_success = True
-                compression_method = "pymupdf"
-                logger.info("Compression successful with PyMuPDF")
+                
+                if temp_output.exists() and temp_output.stat().st_size > 0:
+                    compression_success = True
+                    compression_method = "pymupdf_enhanced"
+                    compression_stats["compressed_size"] = temp_output.stat().st_size
+                    compression_stats["method"] = f"PyMuPDF Enhanced ({quality})"
+                    logger.info("Compression successful with enhanced PyMuPDF")
+                else:
+                    logger.warning("PyMuPDF produced empty file")
                 
             except Exception as e:
-                logger.warning(f"PyMuPDF compression error: {e}")
+                logger.warning(f"Enhanced PyMuPDF compression error: {e}")
+                track_error("PYMUPDF_ERROR", str(e))
         
         if not compression_success:
             return jsonify({
                 "error": "All compression methods failed",
-                "details": "PDF may be corrupted or already optimized"
+                "details": "PDF may be corrupted, already optimized, or contain unsupported features",
+                "suggestions": [
+                    "Try with a different quality setting",
+                    "Check if PDF is password-protected",
+                    "Ensure PDF is not already heavily compressed"
+                ]
             }), 500
         
         # Calculate compression ratio
@@ -671,9 +964,12 @@ def compress_pdf():
         # Copy to cache
         shutil.copy2(temp_output, cached_file)
         
+        # Update compression stats
+        compression_stats["compression_ratio"] = compression_ratio
+        
         # Log compression
-        logger.info(f"Successfully compressed {original_name} using {compression_method} "
-                   f"({compression_ratio:.1f}% reduction: {original_size} -> {compressed_size} bytes)")
+        logger.info(f"Successfully compressed {original_name} using {compression_method}")
+        logger.info(f"Compression stats: {compression_stats}")
         
         @after_this_request
         def cleanup(response):
@@ -696,12 +992,17 @@ def compress_pdf():
         response.headers['X-Original-Size'] = str(original_size)
         response.headers['X-Compressed-Size'] = str(compressed_size)
         response.headers['X-Method'] = compression_method
+        response.headers['X-Quality'] = quality
         
         return response
         
     except Exception as e:
+        track_error("PDF_COMPRESSION_ERROR", str(e))
         logger.error(f"PDF compression error: {str(e)}")
-        return jsonify({"error": f"Compression failed: {str(e)}"}), 500
+        return jsonify({
+            "error": f"Compression failed: {str(e)}",
+            "code": "COMPRESSION_ERROR"
+        }), 500
 
 @app.route('/compress-image', methods=['POST'])
 def compress_image():
@@ -1067,10 +1368,11 @@ def pdf_merge():
         return jsonify({"error": f"PDF merging failed: {str(e)}"}), 500
 
 @app.route('/pdf-split', methods=['POST'])
+@enhanced_error_handler
 def pdf_split():
     """
-    Split PDF into multiple files by pages
-    Features: Page range splitting, individual page extraction
+    Split PDF into multiple files by pages with enhanced functionality
+    Features: Page range splitting, individual page extraction, preview support
     """
     logger.info("PDF split request received")
     
@@ -1079,25 +1381,25 @@ def pdf_split():
             "error": "PDF splitting not available. Install PyMuPDF"
         }), 500
     
-    if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
+    # Validate file upload
+    try:
+        validate_file_upload(request.files.get('file'), ['.pdf'], max_size_mb=100)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     
     file = request.files['file']
-    split_type = request.form.get('type', 'range')  # range, individual, custom
+    split_type = request.form.get('type', 'individual')  # individual, range, custom
     page_ranges = request.form.get('ranges', '')  # e.g., "1-3,5,7-9"
-    
-    if file.filename == '':
-        return jsonify({"error": "No file selected"}), 400
-    
-    if not file.filename.lower().endswith('.pdf'):
-        return jsonify({"error": "Only PDF files are supported"}), 400
+    pages_per_split = request.form.get('pages_per_split', '1')  # for bulk splitting
     
     try:
         import fitz
         
         # Read file content
         file_content = file.read()
-        temp_pdf = TEMP_DIR / f"temp_{hash(file_content)}.pdf"
+        file_hash = get_file_hash(file_content)
+        
+        temp_pdf = TEMP_DIR / f"{file_hash}_input.pdf"
         
         with open(temp_pdf, 'wb') as f:
             f.write(file_content)
@@ -1105,73 +1407,207 @@ def pdf_split():
         doc = fitz.open(str(temp_pdf))
         total_pages = len(doc)
         
-        # Parse page ranges
-        if split_type == 'range' and page_ranges:
-            ranges = []
-            for range_str in page_ranges.split(','):
-                if '-' in range_str:
-                    start, end = map(int, range_str.split('-'))
-                    ranges.append((start-1, end-1))  # Convert to 0-based
-                else:
-                    page_num = int(range_str) - 1
-                    ranges.append((page_num, page_num))
-        else:
+        if total_pages == 0:
+            doc.close()
+            return jsonify({
+                "error": "PDF contains no pages",
+                "details": "The uploaded PDF file appears to be empty"
+            }), 400
+        
+        logger.info(f"Processing PDF with {total_pages} pages, split_type: {split_type}")
+        
+        # Parse page ranges based on split type
+        ranges = []
+        
+        if split_type == 'individual':
             # Split into individual pages
             ranges = [(i, i) for i in range(total_pages)]
+            logger.info(f"Individual split: {len(ranges)} pages")
+            
+        elif split_type == 'bulk' and pages_per_split.isdigit():
+            # Split into chunks of specified size
+            pages_per_chunk = int(pages_per_split)
+            if pages_per_chunk < 1:
+                pages_per_chunk = 1
+            
+            for i in range(0, total_pages, pages_per_chunk):
+                end_page = min(i + pages_per_chunk - 1, total_pages - 1)
+                ranges.append((i, end_page))
+            logger.info(f"Bulk split: {len(ranges)} chunks of {pages_per_chunk} pages each")
+            
+        elif split_type == 'range' and page_ranges:
+            # Parse custom page ranges
+            try:
+                for range_str in page_ranges.split(','):
+                    range_str = range_str.strip()
+                    if '-' in range_str:
+                        start_str, end_str = range_str.split('-', 1)
+                        start = int(start_str.strip()) - 1  # Convert to 0-based
+                        end = int(end_str.strip()) - 1
+                        
+                        # Validate range
+                        if start < 0 or end >= total_pages or start > end:
+                            doc.close()
+                            return jsonify({
+                                "error": f"Invalid page range: {range_str}",
+                                "details": f"Valid page numbers are 1-{total_pages}"
+                            }), 400
+                        
+                        ranges.append((start, end))
+                    else:
+                        page_num = int(range_str) - 1
+                        if page_num < 0 or page_num >= total_pages:
+                            doc.close()
+                            return jsonify({
+                                "error": f"Invalid page number: {range_str}",
+                                "details": f"Valid page numbers are 1-{total_pages}"
+                            }), 400
+                        ranges.append((page_num, page_num))
+                        
+                logger.info(f"Custom range split: {len(ranges)} ranges")
+                
+            except ValueError as ve:
+                doc.close()
+                return jsonify({
+                    "error": f"Invalid page range format: {page_ranges}",
+                    "details": "Use format like '1-3,5,7-9' (page numbers start from 1)"
+                }), 400
+        else:
+            doc.close()
+            return jsonify({
+                "error": "Invalid split configuration",
+                "details": "Specify valid split_type and parameters"
+            }), 400
+        
+        if not ranges:
+            doc.close()
+            return jsonify({
+                "error": "No valid page ranges specified",
+                "details": "Check your page range configuration"
+            }), 400
         
         # Create ZIP for multiple files
-        zip_filename = f"split_{Path(file.filename).stem}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+        original_name = secure_filename(file.filename)
+        base_name = Path(original_name).stem
+        zip_filename = f"{base_name}_split_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
         zip_path = TEMP_DIR / zip_filename
         
-        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        split_files = []
+        split_stats = {
+            "total_pages": total_pages,
+            "split_count": len(ranges),
+            "split_type": split_type,
+            "success_count": 0,
+            "failed_count": 0
+        }
+        
+        # Process each range
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as zipf:
             for i, (start, end) in enumerate(ranges):
-                if start < 0 or end >= total_pages:
-                    continue
-                
-                # Create new PDF with selected pages
-                new_doc = fitz.open()
-                new_doc.insert_pdf(doc, from_page=start, to_page=end)
-                
-                # Save to temporary file
-                split_filename = f"{Path(file.filename).stem}_pages_{start+1}-{end+1}.pdf"
-                split_path = TEMP_DIR / split_filename
-                new_doc.save(str(split_path))
-                new_doc.close()
-                
-                # Add to ZIP
-                zipf.write(split_path, split_filename)
-                
-                # Cleanup temp split file
-                if split_path.exists():
-                    split_path.unlink()
+                try:
+                    # Create new PDF with selected pages
+                    new_doc = fitz.open()
+                    new_doc.insert_pdf(doc, from_page=start, to_page=end)
+                    
+                    # Generate descriptive filename
+                    if start == end:
+                        split_filename = f"{base_name}_page_{start+1}.pdf"
+                        page_info = f"page {start+1}"
+                    else:
+                        split_filename = f"{base_name}_pages_{start+1}-{end+1}.pdf"
+                        page_info = f"pages {start+1}-{end+1}"
+                    
+                    # Save to temporary file
+                    split_path = TEMP_DIR / split_filename
+                    
+                    # Save with optimization
+                    new_doc.save(
+                        str(split_path),
+                        garbage=4,  # Remove unused objects
+                        deflate=True,  # Compress
+                        linear=True  # Optimize for web
+                    )
+                    new_doc.close()
+                    
+                    # Verify file was created successfully
+                    if split_path.exists() and split_path.stat().st_size > 0:
+                        # Add to ZIP
+                        zipf.write(split_path, split_filename)
+                        split_files.append({
+                            "filename": split_filename,
+                            "pages": page_info,
+                            "size": split_path.stat().st_size
+                        })
+                        split_stats["success_count"] += 1
+                        logger.info(f"Created split file: {split_filename} ({page_info})")
+                        
+                        # Cleanup temp split file
+                        split_path.unlink()
+                    else:
+                        logger.warning(f"Failed to create split file for {page_info}")
+                        split_stats["failed_count"] += 1
+                        
+                except Exception as split_error:
+                    logger.error(f"Error creating split for range {start+1}-{end+1}: {split_error}")
+                    split_stats["failed_count"] += 1
+                    track_error("PDF_SPLIT_RANGE_ERROR", f"Range {start+1}-{end+1}: {str(split_error)}")
         
         doc.close()
         
-        # Cleanup temp input file
-        if temp_pdf.exists():
-            temp_pdf.unlink()
+        # Check if any splits were successful
+        if split_stats["success_count"] == 0:
+            return jsonify({
+                "error": "Failed to create any split files",
+                "details": "All page ranges failed to process",
+                "stats": split_stats
+            }), 500
         
-        logger.info(f"Successfully split PDF into {len(ranges)} parts")
+        # Verify ZIP file was created
+        if not zip_path.exists() or zip_path.stat().st_size == 0:
+            return jsonify({
+                "error": "Failed to create output archive",
+                "details": "ZIP file creation failed"
+            }), 500
+        
+        # Log successful split
+        logger.info(f"Successfully split PDF: {split_stats}")
         
         @after_this_request
         def cleanup(response):
             try:
+                if temp_pdf.exists():
+                    temp_pdf.unlink()
                 if zip_path.exists():
                     zip_path.unlink()
+                # Clean up any remaining split files
+                for temp_file in TEMP_DIR.glob(f"{file_hash}_*.pdf"):
+                    temp_file.unlink()
             except Exception as e:
                 logger.warning(f"Cleanup error: {e}")
             return response
         
-        return send_file(
+        # Prepare response with metadata
+        response = send_file(
             zip_path,
             as_attachment=True,
             download_name=zip_filename,
             mimetype='application/zip'
         )
         
+        response.headers['X-Total-Pages'] = str(split_stats["total_pages"])
+        response.headers['X-Split-Count'] = str(split_stats["success_count"])
+        response.headers['X-Failed-Count'] = str(split_stats["failed_count"])
+        response.headers['X-Split-Type'] = split_type
+        
+        return response
+        
     except Exception as e:
+        track_error("PDF_SPLIT_ERROR", str(e))
         logger.error(f"PDF split error: {str(e)}")
-        return jsonify({"error": f"PDF splitting failed: {str(e)}"}), 500
+        return jsonify({
+            "error": f"PDF splitting failed: {str(e)}",
+            "code": "SPLIT_ERROR"
+        }), 500
 
 @app.route('/clear-cache', methods=['POST'])
 def clear_cache():

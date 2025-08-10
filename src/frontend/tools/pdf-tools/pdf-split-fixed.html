@@ -4,8 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
+    <!-- Cache Control for Development -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
     <title>PDF Split - Split PDF by Pages | ImagePDF Toolkit</title>
     <meta name="description" content="Split PDF files by pages or ranges. Free online PDF splitter tool with custom page selection.">
+    <meta name="keywords" content="PDF split, split PDF, PDF splitter, split PDF by pages, PDF page extractor">
+    <meta name="author" content="ImagePDF Toolkit">
     
     <!-- Stylesheets -->
     <link rel="stylesheet" href="../../../../public/styles.min.css?v=2.3.1">
@@ -17,7 +24,6 @@
     <script src="../../../../public/js/pdf.min.js"></script>
     <script src="../../../../public/js/jspdf.min.js"></script>
     <script src="../../../../public/script.js?v=2.3.1"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body class="bg-slate-50 dark:bg-gray-900 text-slate-800 dark:text-gray-100 min-h-screen">
     <!-- Toast Container -->
@@ -96,13 +102,13 @@
                 <!-- Range Options -->
                 <div id="range-options" class="hidden mb-4">
                     <label class="block text-sm font-medium mb-2">Page Ranges (e.g., 1-3,5,7-9):</label>
-                    <input type="text" id="page-ranges" placeholder="1-3,5,7-9" class="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                    <input type="text" id="page-ranges" placeholder="1-3,5,7-9" class="w-full p-3 border rounded-lg">
                 </div>
                 
                 <!-- Bulk Options -->
                 <div id="bulk-options" class="hidden mb-4">
                     <label class="block text-sm font-medium mb-2">Pages per file:</label>
-                    <input type="number" id="pages-per-split" value="1" min="1" class="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                    <input type="number" id="pages-per-split" value="1" min="1" class="w-full p-3 border rounded-lg">
                 </div>
                 
                 <div class="text-center">
@@ -131,17 +137,15 @@
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <h3 class="text-lg font-semibold mb-4">Split Complete!</h3>
                 <div id="results-info" class="mb-4"></div>
-                <div class="flex gap-4">
-                    <button id="download-btn" class="btn-base btn-success" onclick="downloadResults()">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-4-4m4 4l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        Download Split Files
-                    </button>
-                    <button class="btn-base btn-secondary" onclick="resetTool()">
-                        Split Another PDF
-                    </button>
-                </div>
+                <button id="download-btn" class="btn-base btn-success" onclick="downloadResults()">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-4-4m4 4l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Download Split Files
+                </button>
+                <button class="btn-base btn-secondary ml-4" onclick="resetTool()">
+                    Split Another PDF
+                </button>
             </div>
         </div>
         
@@ -162,13 +166,10 @@
     </main>
     
     <script>
-        // Global variables for PDF split tool
-        let pdfSplitTool = {
-            currentFile: null,
-            totalPages: 0,
-            splitResults: null,
-            isProcessing: false
-        };
+        // Global variables
+        let currentFile = null;
+        let totalPages = 0;
+        let splitResults = null;
         
         // Backend configuration
         const BACKEND_CONFIG = {
@@ -178,43 +179,38 @@
             }
         };
         
-        // Initialize when page loads
+        // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             initializeFileHandling();
             initializeSplitOptions();
-            console.log('PDF Split Tool initialized');
         });
         
         function initializeFileHandling() {
             const fileInput = document.getElementById('file-input');
             const dropZone = document.getElementById('file-drop-zone');
             
-            if (fileInput) {
-                fileInput.addEventListener('change', handleFileSelect);
-            }
+            fileInput.addEventListener('change', handleFileSelect);
             
-            if (dropZone) {
-                // Drag and drop handlers
-                dropZone.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    dropZone.classList.add('border-blue-500', 'bg-blue-50');
-                });
+            // Drag and drop
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-blue-500', 'bg-blue-50');
+            });
+            
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+            });
+            
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-blue-500', 'bg-blue-50');
                 
-                dropZone.addEventListener('dragleave', (e) => {
-                    e.preventDefault();
-                    dropZone.classList.remove('border-blue-500', 'bg-blue-50');
-                });
-                
-                dropZone.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    dropZone.classList.remove('border-blue-500', 'bg-blue-50');
-                    
-                    const files = e.dataTransfer.files;
-                    if (files.length > 0) {
-                        handleFileSelect({ target: { files } });
-                    }
-                });
-            }
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileSelect({ target: { files } });
+                }
+            });
         }
         
         function initializeSplitOptions() {
@@ -225,18 +221,15 @@
         }
         
         function updateSplitOptions() {
-            const selectedType = document.querySelector('input[name="split-type"]:checked')?.value;
+            const selectedType = document.querySelector('input[name="split-type"]:checked').value;
             
-            const rangeOptions = document.getElementById('range-options');
-            const bulkOptions = document.getElementById('bulk-options');
+            document.getElementById('range-options').classList.add('hidden');
+            document.getElementById('bulk-options').classList.add('hidden');
             
-            if (rangeOptions) rangeOptions.classList.add('hidden');
-            if (bulkOptions) bulkOptions.classList.add('hidden');
-            
-            if (selectedType === 'range' && rangeOptions) {
-                rangeOptions.classList.remove('hidden');
-            } else if (selectedType === 'bulk' && bulkOptions) {
-                bulkOptions.classList.remove('hidden');
+            if (selectedType === 'range') {
+                document.getElementById('range-options').classList.remove('hidden');
+            } else if (selectedType === 'bulk') {
+                document.getElementById('bulk-options').classList.remove('hidden');
             }
         }
         
@@ -252,55 +245,40 @@
                 return;
             }
             
-            pdfSplitTool.currentFile = file;
+            currentFile = file;
             
             try {
-                // Initialize PDF.js if not already done
-                if (typeof pdfjsLib !== 'undefined') {
-                    pdfjsLib.GlobalWorkerOptions.workerSrc = '../../../../public/js/pdf.worker.min.js';
-                }
-                
                 // Get PDF info
                 const arrayBuffer = await file.arrayBuffer();
                 const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                pdfSplitTool.totalPages = pdf.numPages;
+                totalPages = pdf.numPages;
                 
-                const splitOptions = document.getElementById('split-options');
-                if (splitOptions) {
-                    splitOptions.classList.remove('hidden');
-                }
-                
-                showToast(`PDF loaded: ${pdfSplitTool.totalPages} pages`, 'success');
+                document.getElementById('split-options').classList.remove('hidden');
+                showToast(`PDF loaded: ${totalPages} pages`, 'success');
                 
             } catch (error) {
-                console.error('Error loading PDF:', error);
                 showError(`Failed to load PDF: ${error.message}`);
             }
         }
         
         async function splitPDF() {
-            if (!pdfSplitTool.currentFile) {
+            if (!currentFile) {
                 showError('Please select a PDF file first');
                 return;
             }
             
-            if (pdfSplitTool.isProcessing) {
-                showError('Split operation already in progress');
-                return;
-            }
-            
-            const selectedType = document.querySelector('input[name="split-type"]:checked')?.value;
+            const selectedType = document.querySelector('input[name="split-type"]:checked').value;
             let splitConfig = { type: selectedType };
             
             if (selectedType === 'range') {
-                const ranges = document.getElementById('page-ranges')?.value.trim();
+                const ranges = document.getElementById('page-ranges').value.trim();
                 if (!ranges) {
                     showError('Please specify page ranges');
                     return;
                 }
                 splitConfig.ranges = ranges;
             } else if (selectedType === 'bulk') {
-                const pagesPerSplit = parseInt(document.getElementById('pages-per-split')?.value || '1');
+                const pagesPerSplit = parseInt(document.getElementById('pages-per-split').value);
                 if (pagesPerSplit < 1) {
                     showError('Pages per split must be at least 1');
                     return;
@@ -308,7 +286,6 @@
                 splitConfig.pages_per_split = pagesPerSplit;
             }
             
-            pdfSplitTool.isProcessing = true;
             showProcessingStatus();
             hideError();
             
@@ -317,15 +294,12 @@
                 const success = await tryBackendSplit(splitConfig);
                 if (!success) {
                     // Fallback to client-side
-                    showToast('Backend unavailable, using client-side processing...', 'info');
                     await clientSideSplit(splitConfig);
                 }
                 
             } catch (error) {
-                console.error('Split error:', error);
                 showError(`Split failed: ${error.message}`);
             } finally {
-                pdfSplitTool.isProcessing = false;
                 hideProcessingStatus();
             }
         }
@@ -333,7 +307,7 @@
         async function tryBackendSplit(config) {
             try {
                 const formData = new FormData();
-                formData.append('file', pdfSplitTool.currentFile);
+                formData.append('file', currentFile);
                 formData.append('type', config.type);
                 
                 if (config.ranges) {
@@ -351,12 +325,10 @@
                     const blob = await response.blob();
                     const filename = response.headers.get('content-disposition')?.match(/filename="(.+)"/)?.[1] || 'split_files.zip';
                     
-                    pdfSplitTool.splitResults = { blob, filename, backend: true };
+                    splitResults = { blob, filename, backend: true };
                     showResults(response.headers);
                     showToast('PDF split completed successfully!', 'success');
                     return true;
-                } else {
-                    console.warn('Backend returned error:', response.status);
                 }
                 
             } catch (error) {
@@ -366,67 +338,57 @@
         }
         
         async function clientSideSplit(config) {
-            try {
-                const arrayBuffer = await pdfSplitTool.currentFile.arrayBuffer();
-                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                
-                if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) {
-                    throw new Error('jsPDF library not loaded');
+            showToast('Using client-side processing...', 'info');
+            
+            const arrayBuffer = await currentFile.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const { jsPDF } = window.jspdf;
+            
+            let filesToZip = [];
+            
+            if (config.type === 'individual') {
+                // Split into individual pages
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const blob = await createSinglePagePDF(pdf, pageNum, jsPDF);
+                    filesToZip.push({
+                        name: `page_${pageNum}.pdf`,
+                        blob: blob
+                    });
                 }
-                
-                const { jsPDF } = window.jspdf;
-                let filesToZip = [];
-                
-                if (config.type === 'individual') {
-                    // Split into individual pages
-                    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                        const blob = await createSinglePagePDF(pdf, pageNum, jsPDF);
-                        filesToZip.push({
-                            name: `page_${pageNum}.pdf`,
-                            blob: blob
-                        });
-                    }
-                } else if (config.type === 'range') {
-                    // Parse ranges and create files
-                    const ranges = parsePageRanges(config.ranges, pdf.numPages);
-                    for (let i = 0; i < ranges.length; i++) {
-                        const [start, end] = ranges[i];
-                        const blob = await createRangePDF(pdf, start, end, jsPDF);
-                        const filename = start === end ? `page_${start}.pdf` : `pages_${start}-${end}.pdf`;
-                        filesToZip.push({ name: filename, blob: blob });
-                    }
-                } else if (config.type === 'bulk') {
-                    // Split into chunks
-                    const pagesPerChunk = config.pages_per_split;
-                    for (let start = 1; start <= pdf.numPages; start += pagesPerChunk) {
-                        const end = Math.min(start + pagesPerChunk - 1, pdf.numPages);
-                        const blob = await createRangePDF(pdf, start, end, jsPDF);
-                        const filename = start === end ? `page_${start}.pdf` : `pages_${start}-${end}.pdf`;
-                        filesToZip.push({ name: filename, blob: blob });
-                    }
+            } else if (config.type === 'range') {
+                // Parse ranges and create files
+                const ranges = parsePageRanges(config.ranges, pdf.numPages);
+                for (let i = 0; i < ranges.length; i++) {
+                    const [start, end] = ranges[i];
+                    const blob = await createRangePDF(pdf, start, end, jsPDF);
+                    const filename = start === end ? `page_${start}.pdf` : `pages_${start}-${end}.pdf`;
+                    filesToZip.push({ name: filename, blob: blob });
                 }
-                
-                // Create ZIP file
-                if (typeof JSZip === 'undefined') {
-                    throw new Error('JSZip library not loaded');
+            } else if (config.type === 'bulk') {
+                // Split into chunks
+                const pagesPerChunk = config.pages_per_split;
+                for (let start = 1; start <= pdf.numPages; start += pagesPerChunk) {
+                    const end = Math.min(start + pagesPerChunk - 1, pdf.numPages);
+                    const blob = await createRangePDF(pdf, start, end, jsPDF);
+                    const filename = start === end ? `page_${start}.pdf` : `pages_${start}-${end}.pdf`;
+                    filesToZip.push({ name: filename, blob: blob });
                 }
-                
-                const zip = new JSZip();
-                filesToZip.forEach(file => {
-                    zip.file(file.name, file.blob);
-                });
-                
-                const zipBlob = await zip.generateAsync({ type: 'blob' });
-                const filename = pdfSplitTool.currentFile.name.replace('.pdf', '_split.zip');
-                
-                pdfSplitTool.splitResults = { blob: zipBlob, filename, client: true };
-                showResults();
-                showToast(`Successfully split into ${filesToZip.length} files!`, 'success');
-                
-            } catch (error) {
-                console.error('Client-side split error:', error);
-                throw error;
             }
+            
+            // Create ZIP file
+            const JSZip = window.JSZip;
+            const zip = new JSZip();
+            
+            filesToZip.forEach(file => {
+                zip.file(file.name, file.blob);
+            });
+            
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            const filename = currentFile.name.replace('.pdf', '_split.zip');
+            
+            splitResults = { blob: zipBlob, filename, client: true };
+            showResults();
+            showToast(`Successfully split into ${filesToZip.length} files!`, 'success');
         }
         
         async function createSinglePagePDF(pdf, pageNum, jsPDF) {
@@ -506,8 +468,6 @@
             const resultsDiv = document.getElementById('results');
             const resultsInfo = document.getElementById('results-info');
             
-            if (!resultsDiv || !resultsInfo) return;
-            
             let info = 'PDF split completed successfully!';
             if (headers) {
                 const totalPages = headers.get('X-Total-Pages');
@@ -522,93 +482,59 @@
         }
         
         function downloadResults() {
-            if (!pdfSplitTool.splitResults) {
-                showError('No split results available for download');
-                return;
-            }
+            if (!splitResults) return;
             
-            try {
-                const url = URL.createObjectURL(pdfSplitTool.splitResults.blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = pdfSplitTool.splitResults.filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                
-                showToast('Download started', 'success');
-            } catch (error) {
-                console.error('Download error:', error);
-                showError('Failed to download files');
-            }
+            const url = URL.createObjectURL(splitResults.blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = splitResults.filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
         
         function resetTool() {
-            pdfSplitTool.currentFile = null;
-            pdfSplitTool.totalPages = 0;
-            pdfSplitTool.splitResults = null;
-            pdfSplitTool.isProcessing = false;
+            currentFile = null;
+            totalPages = 0;
+            splitResults = null;
             
-            const elements = {
-                'split-options': true,
-                'results': true,
-                'file-input': 'value',
-                'page-ranges': 'value',
-                'pages-per-split': 'value'
-            };
-            
-            Object.keys(elements).forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    if (elements[id] === true) {
-                        el.classList.add('hidden');
-                    } else if (elements[id] === 'value') {
-                        el.value = id === 'pages-per-split' ? '1' : '';
-                    }
-                }
-            });
-            
-            // Reset radio button
-            const individualRadio = document.querySelector('input[name="split-type"][value="individual"]');
-            if (individualRadio) {
-                individualRadio.checked = true;
-                updateSplitOptions();
-            }
+            document.getElementById('split-options').classList.add('hidden');
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('file-input').value = '';
+            document.getElementById('page-ranges').value = '';
+            document.getElementById('pages-per-split').value = '1';
             
             hideError();
         }
         
         function showProcessingStatus() {
-            const el = document.getElementById('processing-status');
-            if (el) el.classList.remove('hidden');
+            document.getElementById('processing-status').classList.remove('hidden');
         }
         
         function hideProcessingStatus() {
-            const el = document.getElementById('processing-status');
-            if (el) el.classList.add('hidden');
+            document.getElementById('processing-status').classList.add('hidden');
         }
         
         function showError(message) {
-            const errorEl = document.getElementById('error-message');
-            const displayEl = document.getElementById('error-display');
-            
-            if (errorEl) errorEl.textContent = message;
-            if (displayEl) displayEl.classList.remove('hidden');
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('error-display').classList.remove('hidden');
         }
         
         function hideError() {
-            const el = document.getElementById('error-display');
-            if (el) el.classList.add('hidden');
+            document.getElementById('error-display').classList.add('hidden');
         }
         
         function showToast(message, type = 'info', duration = 3000) {
             if (typeof window.showToast === 'function') {
                 window.showToast(message, type, duration);
             } else {
-                console.log(`Toast (${type}): ${message}`);
+                console.log(`Toast: ${message}`);
             }
         }
     </script>
+    
+    <!-- Load JSZip for client-side ZIP creation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </body>
 </html>
