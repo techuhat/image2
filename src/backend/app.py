@@ -321,7 +321,6 @@ def health_check():
             "numpy": NUMPY_AVAILABLE,
             "pillow": True
         },
-        },
         "supported_operations": [
             "compress-pdf",
             "pdf-to-docx", 
