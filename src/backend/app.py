@@ -670,6 +670,28 @@ class CacheManager:
             logger.warning(f"Cache stats error: {e}")
             return {}
 
+# Utility function for temp file cleanup
+def cleanup_temp_files(max_age_hours=1):
+    """Clean up temporary files older than specified hours"""
+    try:
+        current_time = time.time()
+        removed_count = 0
+        
+        for temp_file in TEMP_DIR.glob('*'):
+            if temp_file.is_file():
+                file_age = current_time - temp_file.stat().st_mtime
+                if file_age > max_age_hours * 3600:
+                    temp_file.unlink()
+                    removed_count += 1
+        
+        if removed_count > 0:
+            logger.info(f"Cleaned up {removed_count} temporary files")
+            
+        return removed_count
+    except Exception as e:
+        logger.warning(f"Temp file cleanup error: {e}")
+        return 0
+
 # System capability detection with better error handling
 def check_system_tools():
     """Comprehensive system tool detection"""
@@ -906,7 +928,7 @@ def get_system_stats():
             "magic": MAGIC_AVAILABLE
         },
         "cache": CacheManager.get_cache_stats(),
-        "concurrent_operations": concurrent_operations,
+        "concurrent_operations": MAX_CONCURRENT_OPERATIONS - operation_semaphore._value,
         "max_concurrent_operations": MAX_CONCURRENT_OPERATIONS
     }
     
@@ -1014,7 +1036,7 @@ def get_metrics():
             }
         },
         "operations": {
-            "concurrent_operations": concurrent_operations,
+            "concurrent_operations": MAX_CONCURRENT_OPERATIONS - operation_semaphore._value,
             "max_concurrent_operations": MAX_CONCURRENT_OPERATIONS,
             "semaphore_available": operation_semaphore._value
         },
