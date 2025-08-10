@@ -137,14 +137,14 @@ jobs:
               </handlers>
               <httpPlatform 
                 processPath="python" 
-                arguments="startup.py" 
+                arguments="app.py" 
                 stdoutLogEnabled="true" 
                 stdoutLogFile=".\logs\python.log" 
                 startupTimeLimit="120" 
                 requestTimeout="604800">
                 <environmentVariables>
                   <environmentVariable name="PYTHONPATH" value="." />
-                  <environmentVariable name="PORT" value="8000" />
+                  <environmentVariable name="PORT" value="%HTTP_PLATFORM_PORT%" />
                   <environmentVariable name="FLASK_ENV" value="production" />
                   <environmentVariable name="PYTHONUNBUFFERED" value="1" />
                 </environmentVariables>
@@ -207,12 +207,20 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
+      - name: 🔍 Debug Package Contents
+        run: |
+          echo "🔍 Debugging deployment package contents..."
+          ls -la ./app-package/
+          echo "📦 Package size:"
+          du -sh ./app-package/
+          echo "🐍 Python files:"
+          find ./app-package/ -name "*.py" | head -10
+          
       - name: 🌐 Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
           app-name: ${{ env.APP_NAME }}
-          slot-name: 'Production'
           package: './app-package'
           
       - name: 🔍 Pre-Deployment Verification

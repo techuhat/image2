@@ -1373,5 +1373,19 @@ def internal_error(e):
     return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == '__main__':
-    # Development server
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Azure App Service compatible startup
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_ENV') != 'production'
+    
+    logger.info(f"🚀 Starting Flask app on port {port} (debug={debug})")
+    
+    try:
+        app.run(
+            debug=debug, 
+            host='0.0.0.0', 
+            port=port,
+            threaded=True
+        )
+    except Exception as e:
+        logger.error(f"❌ Failed to start Flask app: {e}")
+        raise
