@@ -905,7 +905,7 @@ def get_system_stats():
             "psutil": PSUTIL_AVAILABLE,
             "magic": MAGIC_AVAILABLE
         },
-        "cache": cache_manager.get_stats(),
+        "cache": CacheManager.get_cache_stats(),
         "concurrent_operations": concurrent_operations,
         "max_concurrent_operations": MAX_CONCURRENT_OPERATIONS
     }
@@ -1018,7 +1018,7 @@ def get_metrics():
             "max_concurrent_operations": MAX_CONCURRENT_OPERATIONS,
             "semaphore_available": operation_semaphore._value
         },
-        "cache": cache_manager.get_stats(),
+        "cache": CacheManager.get_cache_stats(),
         "libraries": {
             "pymupdf": PYMUPDF_AVAILABLE,
             "pdf2docx": PDF2DOCX_AVAILABLE,
@@ -2261,7 +2261,7 @@ def start_background_cleanup():
         while True:
             try:
                 # Clean up old cache files
-                cache_manager.cleanup_expired_files()
+                CacheManager.cleanup_old_cache()
                 
                 # Clean up temp files older than 1 hour
                 cleanup_temp_files(max_age_hours=1)
